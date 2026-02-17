@@ -1,1 +1,4 @@
 selenium
+pyTelegramBotAPI
+flask
+webdriver-manager
