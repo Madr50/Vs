@@ -1,106 +1,260 @@
+import os
+import telebot
+import threading
+import time
+import base64
+import re
+from flask import Flask
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common import NoSuchElementException, ElementNotInteractableException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-import time
-import re
-import sys
-import base64 
-import json
 
-EMAIL = 'your-email'
-PASSWORD = 'your-password'
+# --- إعدادات البوت ---
+BOT_TOKEN = '8345512854:AAGTrsdBKd90oxhBK83ZkFVSR0qh52ZYDto'
+ADMIN_ID = '7825994636' # استبدل هذا بالـ ID الخاص بك لكي لا يستخدمه غيرك
 
-driver = webdriver.Chrome()
-options = webdriver.ChromeOptions()
-options.add_experimental_option("detach", True)
-options.add_argument("--disable-notifications") 
-options.add_argument("--window-size=1366,768")
-options.add_argument("--start-maximized")
-options.add_argument("--headless")
-driver = webdriver.Chrome(options=options)
+bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
 
-driver.get('https://facebook.com')
+# --- متغير لتخزين بيانات المستخدمين المؤقتة ---
+user_data = {}
 
-def login(username, password):
-	driver.find_element(By.ID, 'email').send_keys(username)
-	driver.find_element(By.ID, 'pass').send_keys(password)
-	driver.find_element(By.NAME, 'login').click()
+# --- إعدادات كروم لمنصة Render ---
+def get_chrome_options():
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.binary_location = os.environ.get("CHROME_BIN")
+    chrome_options.add_argument("--headless") 
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-notifications")
+    chrome_options.add_argument("--window-size=1366,768")
+    # إخفاء رسائل التحكم
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+    return chrome_options
 
+# --- سيرفر Flask (لإبقاء البوت حياً) ---
+@app.route('/')
+def home():
+    return "Bot is running with Interactive Mode..."
 
-login(EMAIL, PASSWORD)
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
 
-time.sleep(10)
+# --- منطق السحب (Scraping Logic) ---
+def start_scraping_process(chat_id, email, password, target_url):
+    driver = None
+    try:
+        bot.send_message(chat_id, "🚀 تم استلام البيانات! جاري تشغيل المتصفح والدخول...")
 
-driver.get(str(sys.argv[1]))
+        driver = webdriver.Chrome(options=get_chrome_options())
+        
+        # 1. تسجيل الدخول
+        driver.get('https://facebook.com')
+        
+        # انتظار حقل الإيميل
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'email')))
+        
+        driver.find_element(By.ID, 'email').send_keys(email)
+        driver.find_element(By.ID, 'pass').send_keys(password)
+        driver.find_element(By.NAME, 'login').click()
+        
+        bot.send_message(chat_id, "🔐 جاري التحقق من تسجيل الدخول...")
+        time.sleep(5) 
 
-time.sleep(10)
+        # التحقق هل دخل فعلاً أم لا (فحص وجود خطأ)
+        if "login_attempt" in driver.current_url or "checkpoint" in driver.current_url:
+             bot.send_message(chat_id, "❌ فشل تسجيل الدخول! تأكد من الإيميل أو الباسورد، أو أن الحساب لم يطلب تحقق ثنائي.")
+             driver.quit()
+             return
 
-driver.find_element(By.XPATH, "//div[@aria-label='See Options']").click()
-friendship = driver.find_element(By.XPATH, "//a[contains(@href, 'friendship')]")
-TARGET_UID = re.search(r'/(\d+)/$', (friendship.get_attribute('href'))).group(1)
+        # 2. الذهاب للهدف
+        bot.send_message(chat_id, "✅ تم الدخول. جاري الذهاب لصفحة الهدف...")
+        driver.get(target_url)
+        time.sleep(5)
 
-print(f'Fetched target UID: {TARGET_UID}')
+        # 3. استخراج UID
+        TARGET_UID = None
+        try:
+            # محاولة فتح قائمة الخيارات للكشف عن الروابط المخفية
+            try:
+                driver.find_element(By.XPATH, "//div[@aria-label='See Options']").click()
+                time.sleep(1)
+            except:
+                pass
 
-payload = '{"friends:0":"{\\"name\\":\\"users_friends_of_people\\",\\"args\\":\\"%s\\"}"}' % TARGET_UID.strip()
-encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
+            # البحث عن رابط الصداقة لاستخراج الـ ID
+            links = driver.find_elements(By.TAG_NAME, 'a')
+            for link in links:
+                href = link.get_attribute('href')
+                if href and 'friendship' in href:
+                    match = re.search(r'/(\d+)/', href)
+                    if not match:
+                        match = re.search(r'id=(\d+)', href)
+                    
+                    if match:
+                        TARGET_UID = match.group(1)
+                        break
+            
+            if not TARGET_UID:
+                # محاولة أخيرة من الكود المصدري للصفحة
+                page_source = driver.page_source
+                match = re.search(r'"userID":"(\d+)"', page_source)
+                if match:
+                    TARGET_UID = match.group(1)
 
-print(f'Payload generated: {encoded_payload}')
+            if not TARGET_UID:
+                bot.send_message(chat_id, "❌ لم أتمكن من العثور على ID الحساب. هل الرابط صحيح؟ وهل قائمة الأصدقاء متاحة؟")
+                driver.quit()
+                return
 
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ خطأ أثناء استخراج المعرف: {e}")
+            driver.quit()
+            return
 
-def check_for_new_elements(last_count):
-    current_count = len(driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com')]"))
-    return current_count > last_count
+        bot.send_message(chat_id, f"🆔 تم استخراج المعرف: {TARGET_UID}\n⏳ جاري سحب الأصدقاء الآن...")
 
-remove_substring = lambda str1, str2: str1.replace(str2, "")
+        # تجهيز الفلتر
+        payload = '{"friends:0":"{\\"name\\":\\"users_friends_of_people\\",\\"args\\":\\"%s\\"}"}' % TARGET_UID.strip()
+        encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
 
+        # 4. عملية السحب
+        friends = []
+        remove_substring = lambda str1, str2: str1.replace(str2, "")
 
-friends = []
+        def check_for_new_elements(last_count):
+            current_count = len(driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com')]"))
+            return current_count > last_count
 
-def getFriends(letter):
-	driver.get(f"https://www.facebook.com/search/people/?q={letter}&filters={encoded_payload}")
-	last_element_count = 0
-	while True:
-	    driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
-	    time.sleep(2) 
-	    
-	    if not check_for_new_elements(last_element_count):
-	        break
-	    
-	    last_element_count = len(driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com/')]"))
+        def getFriends(letter):
+            driver.get(f"https://www.facebook.com/search/people/?q={letter}&filters={encoded_payload}")
+            last_element_count = 0
+            retries = 0
+            while retries < 3:
+                driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
+                time.sleep(1.5)
+                if not check_for_new_elements(last_element_count):
+                    retries += 1
+                else:
+                    retries = 0
+                last_element_count = len(driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com/')]"))
 
-	elements = driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com/')]")
+            elements = driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com/')]")
+            for element in elements:
+                link = str(element.get_attribute('href'))
+                if 'login_alerts' not in link and 'notifications' not in link and '__tn__=%3C' not in link:
+                     clean_link = remove_substring(remove_substring(link, '?__tn__=%3C'), '&__tn__=%3C')
+                     friends.append(clean_link)
 
-	for element in elements:
-	    if('login_alerts' not in str(element.get_attribute('href') or 'notifications' not in str(element.get_attribute('href') or '__tn__=%3C' not in str(element.get_attribute('href'))))):
-	    	friends.append(remove_substring(remove_substring(str(element.get_attribute('href')), '?__tn__=%3C'), '&__tn__=%3C'))
+        # التكرار على الحروف
+        for i, l in enumerate(range(97, 123)):
+            getFriends(chr(l))
+            # تحديث الحالة كل 25% من التقدم
+            if i == 5: bot.send_message(chat_id, "20% ...")
+            if i == 13: bot.send_message(chat_id, "50% ...")
+            if i == 20: bot.send_message(chat_id, "80% ...")
 
-try:
-    WebDriverWait(driver, 3).until(
-        EC.presence_of_element_located((By.TAG_NAME, "input"))
-    )
-    print("Fetching all the friends...")
-    print("(This may take a while)")
+        # 5. الحفظ والإرسال
+        unique_friends = list(set(friends))
+        filename = f"friends_{TARGET_UID}.txt"
+        
+        if len(unique_friends) == 0:
+             bot.send_message(chat_id, "⚠️ لم يتم العثور على أي أصدقاء. قد تكون القائمة مخفية بالكامل أو الحساب خاص.")
+        else:
+            with open(filename, 'w') as f:
+                for item in unique_friends:
+                    f.write("%s\n" % item)
+            
+            with open(filename, 'rb') as doc:
+                bot.send_document(chat_id, doc, caption=f"✅ اكتملت المهمة!\nتم استخراج: {len(unique_friends)} صديق.")
+            
+            os.remove(filename)
 
-    count = 1
-    for l in range(97,123):
-    	getFriends(chr(l))
-    	print(f"{count} chunk fetched")
-    	count += 1
+    except Exception as e:
+        bot.send_message(chat_id, f"❌ حدث خطأ غير متوقع: {e}")
+    finally:
+        if driver:
+            driver.quit()
+        # مسح بيانات المستخدم من الذاكرة
+        if chat_id in user_data:
+            del user_data[chat_id]
 
-except Exception as e:
-    print("timed out:", e)
+# --- إدارة المحادثة (Conversation Handlers) ---
 
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    if str(message.chat.id) != ADMIN_ID:
+        bot.reply_to(message, "⛔ هذا البوت خاص.")
+        return
+    
+    # تهيئة بيانات المستخدم
+    user_data[message.chat.id] = {}
+    msg = bot.reply_to(message, "👋 أهلاً بك في بوت السحب المطور.\n\nالخطوة 1: أرسل **الإيميل** الخاص بحساب فيسبوك الذي ستسحب منه:")
+    bot.register_next_step_handler(msg, process_email_step)
 
-friends = list(set(friends))
+def process_email_step(message):
+    if message.text == '/cancel':
+        bot.reply_to(message, "تم الإلغاء.")
+        return
 
-output_file = open(f'{TARGET_UID}.txt', 'w')
+    email = message.text
+    user_data[message.chat.id]['email'] = email
+    
+    msg = bot.reply_to(message, "✅ تم حفظ الإيميل.\n\nالخطوة 2: أرسل **كلمة المرور** (سيتم استخدامها مرة واحدة فقط):")
+    bot.register_next_step_handler(msg, process_password_step)
 
-for f in friends:
-	output_file.write(f + '\n')
+def process_password_step(message):
+    if message.text == '/cancel':
+        bot.reply_to(message, "تم الإلغاء.")
+        return
 
-print(f'The list has been saved to {TARGET_UID}.txt file')
+    password = message.text
+    user_data[message.chat.id]['password'] = password
+    
+    # محاولة حذف رسالة الباسورد للأمان (قد لا تعمل في المجموعات حسب الصلاحيات)
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except:
+        pass
 
-driver.quit()
+    msg = bot.reply_to(message, "✅ تم استلام كلمة المرور.\n\nالخطوة 3: أرسل **رابط حساب الضحية**:")
+    bot.register_next_step_handler(msg, process_target_step)
+
+def process_target_step(message):
+    if message.text == '/cancel':
+        bot.reply_to(message, "تم الإلغاء.")
+        return
+
+    target_url = message.text
+    chat_id = message.chat.id
+    
+    # استرجاع البيانات المحفوظة
+    email = user_data[chat_id].get('email')
+    password = user_data[chat_id].get('password')
+    
+    if not email or not password:
+        bot.reply_to(message, "❌ حدث خطأ في البيانات، أعد التشغيل بـ /start")
+        return
+
+    bot.reply_to(message, "🔄 جاري المعالجة... يرجى الانتظار ولا ترسل أوامر أخرى.")
+    
+    # تشغيل العملية في ثريد منفصل
+    t = threading.Thread(target=start_scraping_process, args=(chat_id, email, password, target_url))
+    t.start()
+
+@bot.message_handler(commands=['cancel'])
+def cancel_operation(message):
+    if message.chat.id in user_data:
+        del user_data[message.chat.id]
+    bot.reply_to(message, "تم إلغاء العملية الحالية. اضغط /start للبدء من جديد.")
+
+# --- التشغيل ---
+if __name__ == "__main__":
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+    print("Bot started...")
+    bot.infinity_polling()
