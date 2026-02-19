@@ -1,150 +1,54 @@
-import os
-import telebot
-import threading
-import time
-import base64
-import re
-from flask import Flask
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
+Act as an elite Quantitative Developer and Crypto Trading Expert. Your task is to write a highly advanced, intelligent, and robust Python trading bot for OKX Spot trading.
 
-# --- إعدادات البوت ---
-BOT_TOKEN = '8345512854:AAGTrsdBKd90oxhBK83ZkFVSR0qh52ZYDto' 
-ADMIN_ID = '7825994636' 
+The bot must use deep, cutting-edge technical analysis to find high-probability, short-term scalp/swing setups and automatically send signals and chart images to Telegram.
 
-bot = telebot.TeleBot(BOT_TOKEN)
-app = Flask(__name__)
-user_data = {}
+### 1. Exchange & API (OKX via CCXT)
+- Use the `ccxt` library to connect to OKX.
+- API Key: '4e945e12-ea6a-426a-8272-7caae6e2a1c0'
+- Secret Key: '7E546FB45CB7F47BFF76BF8A0720C823'
+- Password (Passphrase): 'PLACEHOLDER_FOR_OKX_PASSPHRASE' (Create a variable for this).
 
-# --- إعدادات المتصفح (نسخة 512MB RAM) ---
-def get_chrome_options():
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.binary_location = os.environ.get("CHROME_BIN")
-    chrome_options.add_argument("--headless") 
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--window-size=800,600") # شاشة صغيرة لتوفير الرام
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--blink-settings=imagesEnabled=false") # تعطيل الصور نهائياً
-    return chrome_options
+### 2. Telegram Integration
+- Bot Token: '8520586890:AAHBkefrtNQjv0bPUtpkWG0gijkXU4K84BY'
+- Chat ID: '7825994636'
+- Use `telebot` (pyTelegramBotAPI) or `python-telegram-bot` to send alerts directly to this Chat ID.
 
-def send_live_shot(driver, chat_id, caption):
-    try:
-        tmp = f"shot_{int(time.time())}.png"
-        driver.save_screenshot(tmp)
-        with open(tmp, 'rb') as p:
-            bot.send_photo(chat_id, p, caption=caption)
-        os.remove(tmp)
-    except: pass
+### 3. Selenium Integration for Maximum Precision
+- Integrate `selenium` to scrape highly precise, real-time advanced indicator data or sentiment analysis from web sources (e.g., TradingView or CoinGlass) that are not easily accessible via standard APIs.
+- Combine this scraped data with CCXT market data to confirm entries with absolute precision.
 
-@app.route('/')
-def home(): return "Bot is Active"
+### 4. Extreme Server Optimization (Render 0.1 CPU, 512MB RAM)
+- **CRITICAL:** This bot will be deployed on a Render free-tier instance with only 0.1 CPU and 512MB RAM. Memory management is your top priority.
+- Configure Selenium strictly for ultra-low memory environments. Use headless Chrome/Chromium, disable images, disable GPU, use `--no-sandbox`, and use `--disable-dev-shm-usage`.
+- Implement `gc.collect()` to force garbage collection after every loop or large data processing step. Do not keep large Pandas DataFrames or historical arrays in memory longer than necessary to prevent Out Of Memory (OOM) crashes.
 
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+### 5. Trading Strategy & Logic
+- **Coin Selection:** Dynamically scan the OKX Spot market and ONLY select USDT trading pairs where the current price is less than $1.00.
+- **Timeframe:** Short-term (e.g., 5m or 15m) for fast, highly accurate trades.
+- **Advanced Analysis:** Implement a confluence of the most powerful modern strategies. Combine Smart Money Concepts (SMC - like Order Blocks, Liquidity Sweeps), RSI divergence, Volume Profile, and the extra precision data gathered via Selenium.
+- **Precision:** The bot must analyze the entire chart deeply. It should ONLY trigger a signal when the strict conditions of multiple indicators align perfectly to ensure maximum accuracy and a very high win rate. No false signals.
 
-# --- وظيفة السحب الاقتصادية ---
-def start_scraping_process(chat_id, email, password, target_url):
-    driver = None
-    try:
-        bot.send_message(chat_id, "🚀 بدء التشغيل بنمط توفير الطاقة (512MB RAM)...")
-        driver = webdriver.Chrome(options=get_chrome_options())
-        driver.set_page_load_timeout(120)
+### 6. Trade Execution & Risk Management
+- Calculate precise Entry, Take Profit (TP), and Stop Loss (SL) levels dynamically based on the chart structure and volatility.
+- Calculate the Expected Profit Percentage (%).
+- Calculate the Expected Profit in USD (create a variable for `trade_amount_usd`, default it to $100, and calculate exactly how much USD profit the TP will yield).
 
-        # 1. الدخول
-        driver.get('https://facebook.com')
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, 'email')))
-        driver.find_element(By.ID, 'email').send_keys(email)
-        driver.find_element(By.ID, 'pass').send_keys(password)
-        driver.find_element(By.NAME, 'login').click()
-        
-        time.sleep(10)
-        send_live_shot(driver, chat_id, "📸 حالة الدخول")
+### 7. Telegram Message Format & Visual Chart
+When a flawless setup is found, the bot must send a detailed Telegram message containing:
+- 🪙 Pair: [e.g., XRP/USDT]
+- 🟢 Entry Price: 
+- 🎯 Take Profit (TP):
+- 🛑 Stop Loss (SL):
+- 📈 Expected Profit (%): 
+- 💵 Expected Profit (USD): 
+- ⏱️ Trade Type: Fast Scalp
 
-        # 2. استخراج المعرف
-        driver.get(target_url)
-        time.sleep(7)
-        TARGET_UID = None
-        match = re.search(r'"userID":"(\d+)"', driver.page_source) or re.search(r'id=(\d+)', target_url)
-        if match: TARGET_UID = match.group(1)
+**Crucial Visual Requirement:**
+- Use `mplfinance` or `plotly` to plot the candlestick chart, and draw clear horizontal lines/annotations for the Entry, TP, and SL levels. Save this chart as a `.png` and send it to Telegram.
+- **Memory Note:** Clear the plot figures from memory immediately after saving to avoid RAM buildup (`plt.close('all')`).
 
-        if not TARGET_UID:
-            bot.send_message(chat_id, "❌ لم أجد المعرف. تأكد من الرابط.")
-            driver.quit()
-            return
-
-        bot.send_message(chat_id, f"🆔 المعرف: {TARGET_UID}\n⏳ جاري البحث في أكثر الأسماء شيوعاً...")
-
-        # 3. البحث الذكي (أهم الحروف لتوفير الوقت والرام)
-        payload = '{"friends:0":"{\\"name\\":\\"users_friends_of_people\\",\\"args\\":\\"%s\\"}"}' % TARGET_UID.strip()
-        encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
-        friends_list = []
-        
-        # قائمة حروف ذكية تغطي أغلب الاحتمالات بسرعة
-        smart_chars = ['a', 's', 'm', 'j', 'd', 'l', 'r', 'n', 'h', 'o']
-
-        for char in smart_chars:
-            try:
-                driver.get(f"https://www.facebook.com/search/people/?q={char}&filters={encoded_payload}")
-                time.sleep(5)
-                # تمرير واحد فقط لتجنب تعليق السيرفر الضعيف
-                driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
-                time.sleep(3)
-                
-                elements = driver.find_elements(By.XPATH, "//a[contains(@href, 'facebook.com')]")
-                for el in elements:
-                    href = el.get_attribute('href')
-                    if href and 'facebook.com' in href:
-                        clean = href.split('?')[0].split('&')[0]
-                        if clean not in friends_list: friends_list.append(clean)
-                
-                bot.send_message(chat_id, f"✅ فحصت حرف ({char}) ووجدت {len(friends_list)} حتى الآن.")
-                # صورة كل حرفين لتقليل الضغط
-                if smart_chars.index(char) % 2 == 0:
-                    send_live_shot(driver, chat_id, f"📸 ما يراه البوت عند حرف {char}")
-            except: continue
-
-        if friends_list:
-            fname = f"result_{TARGET_UID}.txt"
-            with open(fname, 'w') as f:
-                for line in set(friends_list): f.write(f"{line}\n")
-            with open(fname, 'rb') as d:
-                bot.send_document(chat_id, d, caption=f"🎉 اكتمل السحب!\nالعدد المستخرج: {len(set(friends_list))}")
-            os.remove(fname)
-        else:
-            bot.send_message(chat_id, "⚠️ لم أجد أصدقاء (قد يكون الحساب محمي جداً).")
-
-    except Exception as e:
-        bot.send_message(chat_id, f"❌ خطأ: {str(e)}")
-    finally:
-        if driver: driver.quit()
-
-# --- أوامر التفاعل ---
-@bot.message_handler(commands=['start'])
-def handle_start(message):
-    if str(message.chat.id) != ADMIN_ID: return
-    user_data[message.chat.id] = {}
-    m = bot.send_message(message.chat.id, "أهلاً بك 👋\nأرسل **الإيميل**:")
-    bot.register_next_step_handler(m, get_mail)
-
-def get_mail(message):
-    user_data[message.chat.id]['email'] = message.text
-    m = bot.send_message(message.chat.id, "أرسل **الباسورد**:")
-    bot.register_next_step_handler(m, get_pass)
-
-def get_pass(message):
-    user_data[message.chat.id]['password'] = message.text
-    m = bot.send_message(message.chat.id, "أرسل **رابط الضحية**:")
-    bot.register_next_step_handler(m, get_target)
-
-def get_target(message):
-    cid = message.chat.id
-    threading.Thread(target=start_scraping_process, args=(cid, user_data[cid]['email'], user_data[cid]['password'], message.text)).start()
-
-if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    bot.infinity_polling()
+### 8. Code Requirements
+- Write clean, production-ready Python code with no syntax errors.
+- Include robust error handling for API limits, network disconnects, and Selenium timeouts.
+- Ensure the bot runs in a continuous automated loop (`while True`).
+- Provide the complete Python script in a single code block, the exact `pip install` commands needed, and instructions on setting up Chromium/ChromeDriver on a Render server environment.
