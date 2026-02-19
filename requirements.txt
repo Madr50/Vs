@@ -4,5 +4,4 @@ mplfinance
 pandas
 numpy
 matplotlib
-selenium
 requests
