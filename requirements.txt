@@ -1,4 +1,9 @@
-selenium
+ccxt
 pyTelegramBotAPI
-flask
+pandas
+pandas_ta
+selenium
 webdriver-manager
+mplfinance
+matplotlib
+numpy
