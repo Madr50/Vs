@@ -1,7 +1,7 @@
+pandas
+https://github.com/twopirllc/pandas-ta/archive/refs/heads/master.zip
 ccxt
 pyTelegramBotAPI
-pandas
-pandas_ta
 selenium
 webdriver-manager
 mplfinance
