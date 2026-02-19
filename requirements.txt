@@ -1,8 +1,9 @@
 ccxt
+flask
 pyTelegramBotAPI
 mplfinance
 pandas
 numpy
 matplotlib
 requests
-flask
+
