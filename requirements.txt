@@ -1,8 +1,8 @@
-ccxt==4.3.48
-pyTelegramBotAPI==4.20.0
-mplfinance==0.12.10b0
-pandas==2.0.3
-numpy==1.24.4
-matplotlib==3.7.5
-selenium==4.18.1
-requests==2.31.0
+ccxt
+pyTelegramBotAPI
+mplfinance
+pandas
+numpy
+matplotlib
+selenium
+requests
