@@ -11,6 +11,8 @@
 import gc
 import io
 import logging
+import os
+import threading
 import time
 from datetime import datetime
 
@@ -24,6 +26,7 @@ import mplfinance as mpf
 import numpy as np
 import pandas as pd
 import telebot
+from flask import Flask
 
 # ═════════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -416,5 +419,27 @@ def main() -> None:
         )
         time.sleep(sleep_for)
 
+# ═════════════════════════════════════════════════════════════════════════════
+# DUMMY WEB SERVER (TO KEEP RENDER ALIVE)
+# ═════════════════════════════════════════════════════════════════════════════
+
+app = Flask(__name__)
+
+@app.route('/')
+def alive():
+    return "Bot is running perfectly!"
+
+def run_dummy_server():
+    # كتم رسائل السيرفر الوهمي لتبقى الـ Logs نظيفة
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+
 if __name__ == "__main__":
+    # تشغيل السيرفر الوهمي
+    server_thread = threading.Thread(target=run_dummy_server)
+    server_thread.daemon = True
+    server_thread.start()
+    
+    # تشغيل البوت الأساسي
     main()
