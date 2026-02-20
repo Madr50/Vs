@@ -1,8 +1,6 @@
-yfinance
+ccxt
 pandas
-numpy
-ta
-colorama
-tabulate
-pyTelegramBotAPI
-flask
+pandas-ta
+python-telegram-bot
+schedule
+python-dotenv
