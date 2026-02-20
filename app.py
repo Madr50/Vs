@@ -1,11 +1,11 @@
 # ============================================================
-# OKX Spot Trading Bot - Lightweight Version (Render Fix)
+# OKX Spot Trading Bot - Scalping Version (Fast Trades)
 # ============================================================
 
 import os
 import ccxt
 import pandas as pd
-import ta  # تم التعديل هنا: استخدام المكتبة الخفيفة
+import ta  
 import asyncio
 import logging
 import time
@@ -22,10 +22,10 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "🤖 OKX Trading Bot is Running Smoothly! 🚀"
+    return "🤖 OKX Trading Bot (Scalping Mode) is Running Smoothly! 🚀"
 
 # ============================================================
-# ⚙️ الإعدادات والمفاتيح
+# ⚙️ الإعدادات والمفاتيح (تم تعديلها للسكالبينج السريع)
 # ============================================================
 config = {
     "okx_api_key":    "4e945e12-ea6a-426a-8272-7caae6e2a1c0",
@@ -36,11 +36,11 @@ config = {
     "telegram_chat_id": "7825994636",  
     
     "symbol":          "BTC/USDT",     
-    "timeframe":       "15m",          
+    "timeframe":       "5m",           # فريم 5 دقائق لصفقات أسرع
     "capital_ratio":   0.35,           
-    "take_profit_pct": 0.025,          
-    "stop_loss_pct":   0.015,          
-    "loop_interval":   60,             
+    "take_profit_pct": 0.01,           # هدف ربح 1%
+    "stop_loss_pct":   0.005,          # وقف خسارة 0.5%
+    "loop_interval":   30,             # فحص السوق كل 30 ثانية
     "min_usdt_balance": 10.0,          
 }
 
@@ -97,7 +97,6 @@ def fetch_ohlcv(exchange: ccxt.okx, symbol: str, timeframe: str, limit: int = 20
         return pd.DataFrame()
 
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    # تم تعديل طريقة استدعاء المؤشرات لتتوافق مع مكتبة ta الجديدة
     df["rsi"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
     
     macd = ta.trend.MACD(df["close"], window_fast=12, window_slow=26, window_sign=9)
@@ -120,7 +119,7 @@ def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 # ============================================================
-# 🎯 استراتيجية الدخول والخروج
+# 🎯 استراتيجية الدخول والخروج (مخففة لزيادة الصفقات)
 # ============================================================
 def check_buy_signal(df: pd.DataFrame) -> dict:
     if df.empty or len(df) < 51:
@@ -129,17 +128,17 @@ def check_buy_signal(df: pd.DataFrame) -> dict:
     curr = df.iloc[-1]
     prev = df.iloc[-2]
     
-    rsi_ok = 40 < curr["rsi"] < 62
-    macd_cross_up = (prev["macd"] < prev["macd_signal"] and curr["macd"] > curr["macd_signal"] and curr["macd_hist"] > 0)
-    macd_strong = (curr["macd"] > curr["macd_signal"] and curr["macd_hist"] > prev["macd_hist"] and curr["macd"] < 0)
+    rsi_ok = 35 < curr["rsi"] < 65  # توسيع نطاق الـ RSI المقبول
+    macd_cross_up = (prev["macd"] < prev["macd_signal"] and curr["macd"] > curr["macd_signal"])
+    macd_strong = (curr["macd"] > curr["macd_signal"] and curr["macd_hist"] > prev["macd_hist"])
     macd_ok = macd_cross_up or macd_strong
     
-    ema_ok = (curr["close"] > curr["ema20"] and curr["ema20"] > curr["ema50"])
+    ema_ok = (curr["close"] > curr["ema20"]) # يكفي أن يكون السعر فوق الـ EMA القريب
     bb_ok = curr["bb_mid"] <= curr["close"] <= curr["bb_upper"]
-    vol_ok = curr["volume"] > curr["vol_sma"] * 1.2
+    vol_ok = curr["volume"] > curr["vol_sma"]
     
     conditions_met = sum([rsi_ok, macd_ok, ema_ok, bb_ok, vol_ok])
-    all_ok = conditions_met >= 4
+    all_ok = conditions_met >= 3  # يتطلب 3 شروط فقط من 5
     
     return {
         "signal": all_ok, 
@@ -153,7 +152,7 @@ def check_sell_signal(df: pd.DataFrame, entry_price: float) -> dict:
     curr = df.iloc[-1]
     prev = df.iloc[-2]
     
-    rsi_overbought  = curr["rsi"] > 70
+    rsi_overbought  = curr["rsi"] > 75
     macd_cross_down = (prev["macd"] > prev["macd_signal"] and curr["macd"] < curr["macd_signal"])
     price_below_ema = curr["close"] < curr["ema20"]
     
@@ -224,7 +223,7 @@ def run_bot():
     tracker  = TradeTracker()
     symbol   = config["symbol"]
     
-    notify(f"🤖 <b>تم التشغيل بنجاح</b>\nالزوج: {symbol}\nاستراتيجية: Spot")
+    notify(f"⚡ <b>تم تشغيل نظام السكالبينج بنجاح</b>\nالزوج: {symbol}\nالفريم: {config['timeframe']}\nالهدف: {config['take_profit_pct']*100}%\nالوقف: {config['stop_loss_pct']*100}%")
     
     while True:
         try:
@@ -240,7 +239,7 @@ def run_bot():
                 tp_sl = tracker.check_tp_sl(current_price)
                 if tp_sl:
                     pnl = tracker.close(current_price)
-                    reason_ar = "هدف الربح ✅" if tp_sl == "take_profit" else "وقف الخسارة 🛑"
+                    reason_ar = "الهدف السريع ✅" if tp_sl == "take_profit" else "وقف الخسارة 🛑"
                     notify(f"{'🟢' if pnl > 0 else '🔴'} <b>صفقة مغلقة - {reason_ar}</b>\nالربح/الخسارة: {pnl:+.4f} USDT")
                 else:
                     sell_signal = check_sell_signal(df, tracker.open_trade["entry_price"])
@@ -261,7 +260,7 @@ def run_bot():
                         order = place_buy_order(exchange, symbol, qty, current_price)
                         if order:
                             tracker.open(symbol, current_price, qty, tp, sl)
-                            notify(f"🟢 <b>صفقة شراء جديدة!</b>\nسعر الدخول: {current_price}\nTP: {tp} | SL: {sl}")
+                            notify(f"🟢 <b>صفقة سكالبينج جديدة!</b>\nسعر الدخول: {current_price}\nTP: {tp} | SL: {sl}")
                 
         except Exception as e:
             logger.error(f"Error: {e}")
