@@ -1,445 +1,342 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║         OKX SPOT TRADING BOT — Ultra-Lightweight Sniper Edition              ║
-║         Target: Render Free Tier (0.1 CPU / 512 MB RAM)                      ║
-║         Strategy: RSI Oversold + EMA Cross + Volume Surge + ATR SL/TP        ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+🔍 FOREX SCANNER - Scalping Edition (5m / 15m)
+تحليل فني متكامل مع تيليجرام و Flask وفحص مستمر
 """
 
-# ── Standard library ──────────────────────────────────────────────────────────
-
-import gc
-import io
-import logging
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import ta
+from colorama import Fore, Style, init
+from tabulate import tabulate
+from datetime import datetime
+import warnings
+import telebot
 import os
 import threading
 import time
-from datetime import datetime
-
-# ── Third-party ───────────────────────────────────────────────────────────────
-
-import ccxt
-import matplotlib
-matplotlib.use("Agg")  # Headless backend — MUST be set before any other mpl import
-import matplotlib.pyplot as plt
-import mplfinance as mpf
-import numpy as np
-import pandas as pd
-import telebot
 from flask import Flask
 
-# ═════════════════════════════════════════════════════════════════════════════
-# LOGGING
-# ═════════════════════════════════════════════════════════════════════════════
+warnings.filterwarnings('ignore')
+init(autoreset=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  [%(levelname)s]  %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-log = logging.getLogger(__name__)
-
-# ═════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION
-# ═════════════════════════════════════════════════════════════════════════════
-
-API_KEY        = "4e945e12-ea6a-426a-8272-7caae6e2a1c0"
-API_SECRET     = "7E546FB45CB7F47BFF76BF8A0720C823"
-API_PASSPHRASE = "Abdullaheyas123@"
-
-TELEGRAM_TOKEN   = "8520586890:AAHBkefrtNQjv0bPUtpkWG0gijkXU4K84BY"
+# =====================================================
+# إعدادات التيليجرام
+# =====================================================
+TELEGRAM_TOKEN = "8520586890:AAHBkefrtNQjv0bPUtpkWG0gijkXU4K84BY"
 TELEGRAM_CHAT_ID = "7825994636"
+bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode="HTML")
 
-# ── Scanning ──────────────────────────────────────────────────────────────────
+# =====================================================
+# أزواج العملات المراد سكانها
+# =====================================================
+PAIRS = [
+    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
+    "USDCAD=X", "USDCHF=X", "NZDUSD=X", "EURJPY=X",
+    "GBPJPY=X", "EURGBP=X", "AUDJPY=X", "EURAUD=X"
+]
 
-TIMEFRAME     = "15m"          # 5m or 15m
-CANDLE_LIMIT  = 100            # keep RAM low
-MAX_PRICE     = 1.00           # only sub-$1 coins
-MAX_PAIRS     = 60             # cap pairs scanned per cycle
-SCAN_SLEEP    = 60             # seconds between cycles
+PAIR_NAMES = {
+    "EURUSD=X": "EUR/USD", "GBPUSD=X": "GBP/USD",
+    "USDJPY=X": "USD/JPY", "AUDUSD=X": "AUD/USD",
+    "USDCAD=X": "USD/CAD", "USDCHF=X": "USD/CHF",
+    "NZDUSD=X": "NZD/USD", "EURJPY=X": "EUR/JPY",
+    "GBPJPY=X": "GBP/JPY", "EURGBP=X": "EUR/GBP",
+    "AUDJPY=X": "AUD/JPY", "EURAUD=X": "EUR/AUD"
+}
 
-# ── Indicator parameters ──────────────────────────────────────────────────────
+# ذاكرة ذكية لتجنب تكرار نفس الإشارة لنفس الشمعة
+last_alerts = {}
 
-RSI_PERIOD       = 14
-RSI_OVERSOLD     = 33          # strict threshold
-EMA_FAST         = 9
-EMA_SLOW         = 21
-ATR_PERIOD       = 14
-ATR_SL_MULT      = 1.5         # SL  = entry − ATR × multiplier
-ATR_TP_MULT      = 3.0         # TP  = entry + ATR × multiplier
-MIN_RR           = 1.8         # minimum reward-to-risk to fire a signal
-VOL_SURGE_MULT   = 1.3         # last candle volume > N × rolling average
-
-# ═════════════════════════════════════════════════════════════════════════════
-# CLIENTS
-# ═════════════════════════════════════════════════════════════════════════════
-
-exchange = ccxt.okx(
-    {
-        "apiKey":   API_KEY,
-        "secret":   API_SECRET,
-        "password": API_PASSPHRASE,
-        "enableRateLimit": True,
-        "options": {"defaultType": "spot"},
-    }
-)
-
-tg = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode="HTML")
-
-# ═════════════════════════════════════════════════════════════════════════════
-# PURE-PANDAS INDICATOR HELPERS
-# ═════════════════════════════════════════════════════════════════════════════
-
-def _rsi(close: pd.Series, period: int = 14) -> pd.Series:
-    delta = close.diff()
-    gain  = delta.clip(lower=0)
-    loss  = (-delta).clip(lower=0)
-    avg_g = gain.ewm(com=period - 1, min_periods=period).mean()
-    avg_l = loss.ewm(com=period - 1, min_periods=period).mean()
-    rs    = avg_g / avg_l.replace(0, np.nan)
-    return 100 - (100 / (1 + rs))
-
-def _ema(series: pd.Series, span: int) -> pd.Series:
-    return series.ewm(span=span, adjust=False).mean()
-
-def _atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
-    h, l, c = df["high"], df["low"], df["close"]
-    prev_c  = c.shift(1)
-    tr = pd.concat(
-        [h - l, (h - prev_c).abs(), (l - prev_c).abs()], axis=1
-    ).max(axis=1)
-    return tr.ewm(com=period - 1, min_periods=period).mean()
-
-def _macd(close: pd.Series):
-    """Returns (macd_line, signal_line)."""
-    fast   = _ema(close, 12)
-    slow   = _ema(close, 26)
-    macd   = fast - slow
-    signal = _ema(macd, 9)
-    return macd, signal
-
-# ═════════════════════════════════════════════════════════════════════════════
-# DATA FETCHING
-# ═════════════════════════════════════════════════════════════════════════════
-
-def fetch_ohlcv(symbol: str) -> pd.DataFrame | None:
-    """Fetch OHLCV candles and return a clean DataFrame, or None on failure."""
+# =====================================================
+# دالة تحميل البيانات
+# =====================================================
+def get_data(pair, period="1mo", interval="15m"):
     try:
-        raw = exchange.fetch_ohlcv(symbol, timeframe=TIMEFRAME, limit=CANDLE_LIMIT)
-    except Exception as exc:
-        log.debug("fetch_ohlcv(%s) error: %s", symbol, exc)
+        df = yf.download(pair, period=period, interval=interval, progress=False)
+        if df.empty or len(df) < 50:
+            return None
+        df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
+        df.dropna(inplace=True)
+        return df
+    except:
         return None
 
-    if not raw or len(raw) < EMA_SLOW + ATR_PERIOD + 5:
-        return None
+# =====================================================
+# حساب المؤشرات الفنية
+# =====================================================
+def add_indicators(df):
+    close = df['Close']
+    high  = df['High']
+    low   = df['Low']
 
-    df = pd.DataFrame(raw, columns=["timestamp", "open", "high", "low", "close", "volume"])
-    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
-    df.set_index("timestamp", inplace=True)
-    df = df.astype(float)
+    # RSI
+    df['RSI'] = ta.momentum.RSIIndicator(close, window=14).rsi()
+
+    # MACD
+    macd = ta.trend.MACD(close)
+    df['MACD']        = macd.macd()
+    df['MACD_signal'] = macd.macd_signal()
+    df['MACD_hist']   = macd.macd_diff()
+
+    # Bollinger Bands
+    bb = ta.volatility.BollingerBands(close, window=20, window_dev=2)
+    df['BB_upper'] = bb.bollinger_hband()
+    df['BB_lower'] = bb.bollinger_lband()
+    
+    # EMA
+    df['EMA_20']  = ta.trend.EMAIndicator(close, window=20).ema_indicator()
+    df['EMA_50']  = ta.trend.EMAIndicator(close, window=50).ema_indicator()
+    df['EMA_200'] = ta.trend.EMAIndicator(close, window=200).ema_indicator()
+
+    # Stochastic
+    stoch = ta.momentum.StochasticOscillator(high, low, close)
+    df['STOCH_K'] = stoch.stoch()
+    df['STOCH_D'] = stoch.stoch_signal()
+
+    # ATR
+    df['ATR'] = ta.volatility.AverageTrueRange(high, low, close).average_true_range()
+
+    # ADX
+    adx = ta.trend.ADXIndicator(high, low, close)
+    df['ADX']    = adx.adx()
+    df['ADX_pos'] = adx.adx_pos()
+    df['ADX_neg'] = adx.adx_neg()
+
     return df
 
-# ═════════════════════════════════════════════════════════════════════════════
-# SIGNAL ANALYSIS
-# ═════════════════════════════════════════════════════════════════════════════
+# =====================================================
+# منطق تحليل الإشارة
+# =====================================================
+def analyze_signal(df):
+    df = add_indicators(df)
+    df.dropna(inplace=True)
 
-def analyse(df: pd.DataFrame):
-    """
-    Compute all indicators and evaluate confluence.
-    Returns a dict with trade details, or None if no valid signal.
-    """
-    close = df["close"]
-
-    # ── Indicators ────────────────────────────────────────────────────────────
-    rsi       = _rsi(close, RSI_PERIOD)
-    ema_fast  = _ema(close, EMA_FAST)
-    ema_slow  = _ema(close, EMA_SLOW)
-    atr       = _atr(df, ATR_PERIOD)
-    macd, sig = _macd(close)
-
-    # ── Last two candles ──────────────────────────────────────────────────────
-    last, prev = df.iloc[-1], df.iloc[-2]
-
-    rsi_now  = rsi.iloc[-1]
-    ema_f_n, ema_f_p = ema_fast.iloc[-1], ema_fast.iloc[-2]
-    ema_s_n, ema_s_p = ema_slow.iloc[-1], ema_slow.iloc[-2]
-    macd_n,  sig_n   = macd.iloc[-1],     sig.iloc[-1]
-    macd_p,  sig_p   = macd.iloc[-2],     sig.iloc[-2]
-    atr_val  = atr.iloc[-1]
-    entry    = last["close"]
-
-    # ── Guard against zero / NaN ──────────────────────────────────────────────
-    if any(pd.isna([rsi_now, atr_val, macd_n, sig_n])):
-        return None
-    if atr_val == 0 or entry == 0:
+    if len(df) < 10:
         return None
 
-    # ── Volume surge ──────────────────────────────────────────────────────────
-    vol_avg   = df["volume"].iloc[-20:-1].mean()
-    vol_surge = (last["volume"] > vol_avg * VOL_SURGE_MULT) if vol_avg > 0 else False
+    last  = df.iloc[-1]
+    prev  = df.iloc[-2]
+    close = float(last['Close'])
+    atr   = float(last['ATR'])
 
-    # ── EMA golden cross (fast crosses above slow) ────────────────────────────
-    ema_cross = (ema_f_p <= ema_s_p) and (ema_f_n > ema_s_n)
-    ema_above = ema_f_n > ema_s_n        # fast already above slow
+    buy_score  = 0
+    sell_score = 0
+    reasons    = []
 
-    # ── MACD cross above signal ───────────────────────────────────────────────
-    macd_cross = (macd_p <= sig_p) and (macd_n > sig_n)
+    # --- RSI ---
+    rsi = float(last['RSI'])
+    if rsi < 35:
+        buy_score += 2
+        reasons.append(f"RSI={rsi:.1f} (تشبع بيعي)")
+    elif rsi > 65:
+        sell_score += 2
+        reasons.append(f"RSI={rsi:.1f} (تشبع شرائي)")
 
-    # ── Bullish body ──────────────────────────────────────────────────────────
-    bullish_body = last["close"] > last["open"]
+    # --- MACD ---
+    if float(last['MACD']) > float(last['MACD_signal']) and float(prev['MACD']) <= float(prev['MACD_signal']):
+        buy_score += 2
+        reasons.append("MACD تقاطع صاعد ✅")
+    elif float(last['MACD']) < float(last['MACD_signal']) and float(prev['MACD']) >= float(prev['MACD_signal']):
+        sell_score += 2
+        reasons.append("MACD تقاطع هابط ✅")
 
-    # ══════════════════════════════════════════════════════════════════════════
-    #  CONFLUENCE GATE — ALL conditions must pass
-    # ══════════════════════════════════════════════════════════════════════════
-    cond_rsi    = rsi_now < RSI_OVERSOLD
-    cond_trend  = ema_cross or (ema_above and macd_cross)
-    cond_vol    = vol_surge
-    cond_candle = bullish_body
+    # --- EMA Trend ---
+    ema20  = float(last['EMA_20'])
+    ema50  = float(last['EMA_50'])
+    ema200 = float(last['EMA_200'])
 
-    if not (cond_rsi and cond_trend and cond_vol and cond_candle):
+    if close > ema200:
+        buy_score += 1
+        if ema20 > ema50:
+            buy_score += 1
+            reasons.append("السعر فوق EMA200 + EMA20 فوق EMA50 📈")
+    else:
+        sell_score += 1
+        if ema20 < ema50:
+            sell_score += 1
+            reasons.append("السعر تحت EMA200 + EMA20 تحت EMA50 📉")
+
+    # --- Bollinger Bands ---
+    bb_lower = float(last['BB_lower'])
+    bb_upper = float(last['BB_upper'])
+    if close <= bb_lower:
+        buy_score += 2
+        reasons.append("السعر عند حد BB السفلي (ارتداد محتمل)")
+    elif close >= bb_upper:
+        sell_score += 2
+        reasons.append("السعر عند حد BB العلوي (ارتداد محتمل)")
+
+    # --- Stochastic ---
+    stoch_k = float(last['STOCH_K'])
+    stoch_d = float(last['STOCH_D'])
+    if stoch_k < 25 and stoch_k > stoch_d:
+        buy_score += 1
+        reasons.append(f"Stochastic={stoch_k:.1f} منطقة تشبع بيعي مع تقاطع")
+    elif stoch_k > 75 and stoch_k < stoch_d:
+        sell_score += 1
+        reasons.append(f"Stochastic={stoch_k:.1f} منطقة تشبع شرائي مع تقاطع")
+
+    # --- ADX (قوة الترند) ---
+    adx = float(last['ADX'])
+    adx_pos = float(last['ADX_pos'])
+    adx_neg = float(last['ADX_neg'])
+    trend_strength = "قوي" if adx > 25 else "ضعيف"
+    if adx > 20:
+        if adx_pos > adx_neg:
+            buy_score += 1
+        else:
+            sell_score += 1
+
+    # --- تحديد الإشارة ---
+    total = buy_score + sell_score
+    if total == 0:
         return None
 
-    # ── SL / TP ───────────────────────────────────────────────────────────────
-    sl = round(entry - ATR_SL_MULT * atr_val, 8)
-    tp = round(entry + ATR_TP_MULT * atr_val, 8)
-
-    if sl >= entry or tp <= entry or sl <= 0:
+    if buy_score > sell_score and buy_score >= 5:
+        signal    = "BUY"
+        strength  = min(100, int((buy_score / 10) * 100))
+        entry     = close
+        sl        = round(close - 1.5 * atr, 5)
+        tp1       = round(close + 1.5 * atr, 5)
+        tp2       = round(close + 3.0 * atr, 5)
+        tp3       = round(close + 4.5 * atr, 5)
+    elif sell_score > buy_score and sell_score >= 5:
+        signal    = "SELL"
+        strength  = min(100, int((sell_score / 10) * 100))
+        entry     = close
+        sl        = round(close + 1.5 * atr, 5)
+        tp1       = round(close - 1.5 * atr, 5)
+        tp2       = round(close - 3.0 * atr, 5)
+        tp3       = round(close - 4.5 * atr, 5)
+    else:
         return None
 
-    risk   = entry - sl
-    reward = tp - entry
-    rr     = round(reward / risk, 2)
-
-    if rr < MIN_RR:
-        return None
-
-    profit_pct = round((reward / entry) * 100, 2)
+    rr_ratio = round((abs(tp1 - entry)) / (abs(sl - entry)), 2) if sl != entry else 0
 
     return {
-        "entry":      entry,
-        "tp":         tp,
-        "sl":         sl,
-        "rr":         rr,
-        "profit_pct": profit_pct,
-        "rsi":        round(rsi_now, 1),
-        "atr":        atr_val,
+        "signal":    signal,
+        "strength":  strength,
+        "entry":     entry,
+        "sl":        sl,
+        "tp1":       tp1,
+        "tp2":       tp2,
+        "tp3":       tp3,
+        "rr":        rr_ratio,
+        "rsi":       round(rsi, 1),
+        "adx":       round(adx, 1),
+        "trend":     trend_strength,
+        "reasons":   reasons,
+        "atr":       round(atr, 5)
     }
 
-# ═════════════════════════════════════════════════════════════════════════════
-# CHARTING
-# ═════════════════════════════════════════════════════════════════════════════
-
-def build_chart(df: pd.DataFrame, symbol: str, entry: float, tp: float, sl: float) -> io.BytesIO:
-    """
-    Build a minimal mplfinance candlestick chart with Entry / TP / SL
-    horizontal lines. Returns an in-memory PNG buffer.
-    """
-    plot_df = df[["open", "high", "low", "close", "volume"]].iloc[-60:].copy()
-
-    hlines = dict(
-        hlines=[entry, tp, sl],
-        colors=["#00BFFF", "#00FF88", "#FF4444"],
-        linestyle="--",
-        linewidths=(1.2, 1.2, 1.2),
+# =====================================================
+# إرسال إلى تيليجرام
+# =====================================================
+def send_telegram_alert(pair_name, result, timeframe):
+    icon = "🟢 BUY" if result['signal'] == "BUY" else "🔴 SELL"
+    stars = "⭐" * (result['strength'] // 20)
+    
+    reasons_text = "\n".join([f"• {r}" for r in result['reasons']])
+    
+    msg = (
+        f"{icon} <b>{pair_name}</b> | {timeframe} Scalp\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"💪 <b>قوة الإشارة:</b> {result['strength']}% {stars}\n\n"
+        f"📍 <b>سعر الدخول:</b> <code>{result['entry']:.5f}</code>\n"
+        f"🛑 <b>وقف الخسارة:</b> <code>{result['sl']:.5f}</code>\n"
+        f"🎯 <b>هدف (TP1):</b> <code>{result['tp1']:.5f}</code>\n"
+        f"🎯 <b>هدف (TP2):</b> <code>{result['tp2']:.5f}</code>\n"
+        f"⚖️ <b>نسبة R:R:</b> <code>1:{result['rr']}</code>\n\n"
+        f"📊 <b>مؤشرات:</b>\n"
+        f"RSI: {result['rsi']} | ADX: {result['adx']} ({result['trend']})\n\n"
+        f"📋 <b>أسباب الإشارة:</b>\n{reasons_text}\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"🕒 {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
     )
-
-    mc    = mpf.make_marketcolors(up="#00FF88", down="#FF4444", inherit=True)
-    style = mpf.make_mpf_style(
-        base_mpf_style="nightclouds",
-        marketcolors=mc,
-        gridstyle=":",
-        gridcolor="#2a2a2a",
-    )
-
-    buf = io.BytesIO()
-    fig, _ = mpf.plot(
-        plot_df,
-        type="candle",
-        style=style,
-        title=f"\n{symbol}  |  {TIMEFRAME}  |  Sniper Entry",
-        ylabel="Price (USDT)",
-        volume=True,
-        hlines=hlines,
-        figsize=(10, 6),
-        returnfig=True,
-        warn_too_much_data=200,
-    )
-
-    import matplotlib.patches as mpatches
-    patches = [
-        mpatches.Patch(color="#00BFFF", label=f"Entry  {entry}"),
-        mpatches.Patch(color="#00FF88", label=f"TP     {tp}"),
-        mpatches.Patch(color="#FF4444", label=f"SL     {sl}"),
-    ]
-    fig.axes[0].legend(
-        handles=patches, loc="upper left",
-        fontsize=8, facecolor="#1a1a2e", labelcolor="white", framealpha=0.8,
-    )
-
-    fig.savefig(buf, format="png", dpi=100, bbox_inches="tight")
-    buf.seek(0)
-
-    plt.close("all")
-    del fig, plot_df
-    gc.collect()
-
-    return buf
-
-# ═════════════════════════════════════════════════════════════════════════════
-# TELEGRAM DISPATCH
-# ═════════════════════════════════════════════════════════════════════════════
-
-def send_signal(symbol: str, sig: dict, chart_buf: io.BytesIO) -> None:
-    """Send the trade signal text + chart to Telegram."""
-    caption = (
-        f"🎯 <b>SNIPER ENTRY DETECTED</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🪙 <b>Pair:</b>    <code>{symbol}</code>\n"
-        f"🟢 <b>Entry:</b>   <code>{sig['entry']}</code>\n"
-        f"🎯 <b>TP:</b>      <code>{sig['tp']}</code>\n"
-        f"🛑 <b>SL:</b>      <code>{sig['sl']}</code>\n"
-        f"📈 <b>Profit:</b>  <code>{sig['profit_pct']}%</code>\n"
-        f"⚖️ <b>R:R:</b>     <code>1 : {sig['rr']}</code>\n"
-        f"📊 <b>RSI:</b>     <code>{sig['rsi']}</code>\n"
-        f"⏱️ <b>Type:</b>    Fast Scalp\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🕒 {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
-    )
-
+    
     try:
-        tg.send_photo(
-            chat_id=TELEGRAM_CHAT_ID,
-            photo=chart_buf,
-            caption=caption,
-        )
-        log.info("✅  Signal sent → %s  |  TP %.6f  |  SL %.6f  |  RR 1:%.2f",
-                 symbol, sig["tp"], sig["sl"], sig["rr"])
-    except Exception as exc:
-        log.warning("Telegram send_photo failed: %s", exc)
-        try:
-            tg.send_message(TELEGRAM_CHAT_ID, caption)
-        except Exception as exc2:
-            log.error("Telegram send_message also failed: %s", exc2)
+        bot.send_message(TELEGRAM_CHAT_ID, msg)
+    except Exception as e:
+        print(f"⚠️ فشل الإرسال إلى تيليجرام: {e}")
 
-# ═════════════════════════════════════════════════════════════════════════════
-# PAIR SCANNER
-# ═════════════════════════════════════════════════════════════════════════════
+# =====================================================
+# تشغيل السكانر الأساسي
+# =====================================================
+def run_scanner(timeframe="15m"):
+    tf_map = {
+        "5m":  ("5d", "5m"),
+        "15m": ("1mo", "15m"),
+        "1h":  ("3mo", "1h"),
+    }
+    period, interval = tf_map.get(timeframe, ("1mo", "15m"))
 
-def get_target_pairs() -> list[str]:
-    """Return USDT spot pairs under MAX_PRICE."""
-    try:
-        tickers = exchange.fetch_tickers()
-    except Exception as exc:
-        log.warning("fetch_tickers failed: %s", exc)
-        return []
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] 🔍 فحص السوق على فريم {timeframe}...")
 
-    candidates = []
-    for symbol, t in tickers.items():
-        if not symbol.endswith("/USDT"):
+    for pair in PAIRS:
+        name = PAIR_NAMES.get(pair, pair)
+        df = get_data(pair, period=period, interval=interval)
+        if df is None:
             continue
-        last = t.get("last") or 0
-        vol  = t.get("quoteVolume") or 0
-        if 0 < last < MAX_PRICE and vol > 0:
-            candidates.append((symbol, vol))
+        
+        # التقاط توقيت آخر شمعة
+        last_candle_time = df.index[-1]
 
-    candidates.sort(key=lambda x: x[1], reverse=True)
-    pairs = [s for s, _ in candidates[:MAX_PAIRS]]
-    log.info("🔍  Scanning %d pairs (price < $%.2f)", len(pairs), MAX_PRICE)
-    return pairs
+        # التحقق: هل أرسلنا إشارة لهذه الشمعة مسبقاً؟
+        if pair in last_alerts and last_alerts[pair] == last_candle_time:
+            continue # تخطي لأننا أرسلنا إشارة لهذه الشمعة بالفعل
+        
+        result = analyze_signal(df)
+        if result:
+            send_telegram_alert(name, result, timeframe)
+            # حفظ توقيت الشمعة لعدم تكرار الإشارة
+            last_alerts[pair] = last_candle_time
+            print(f"✅ تم إرسال إشارة {name} بنجاح.")
 
-# ═════════════════════════════════════════════════════════════════════════════
-# MAIN LOOP
-# ═════════════════════════════════════════════════════════════════════════════
-
-def main() -> None:
-    log.info("🤖  OKX Sniper Bot started")
-
-    try:
-        tg.send_message(
-            TELEGRAM_CHAT_ID,
-            "🤖 <b>OKX Sniper Bot is LIVE</b>\n"
-            f"Scanning sub-$1 USDT pairs on {TIMEFRAME} every {SCAN_SLEEP}s.\n"
-            "Waiting for high-confluence setups… 🎯",
-        )
-    except Exception as exc:
-        log.warning("Startup ping failed: %s", exc)
-
-    alerted_this_cycle: set[str] = set()
-
+# =====================================================
+# الحلقة التكرارية (Loop) لتشغيل البوت باستمرار
+# =====================================================
+def start_bot_loop():
+    # ⚙️ إعدادات الفريم ووقت الفحص:
+    # لتغييره لـ 5 دقائق، غير القيمة إلى "5m"
+    tf = "15m" 
+    
+    # وقت الانتظار بين كل فحص (بالثواني). 300 ثانية تعني 5 دقائق.
+    sleep_time = 300 
+    
+    bot.send_message(TELEGRAM_CHAT_ID, f"🤖 <b>Scalping Bot is LIVE!</b>\nجاري فحص السوق باستمرار على فريم {tf}...")
+    
     while True:
-        cycle_start = time.time()
+        try:
+            run_scanner(timeframe=tf)
+        except Exception as e:
+            print(f"Error during scan: {e}")
+            
+        time.sleep(sleep_time)
 
-        if not alerted_this_cycle:
-            log.info("♻️  Alert dedup cache cleared")
-        alerted_this_cycle = set()
-
-        pairs = get_target_pairs()
-
-        for symbol in pairs:
-            if symbol in alerted_this_cycle:
-                continue
-
-            df = fetch_ohlcv(symbol)
-            if df is None:
-                continue
-
-            try:
-                result = analyse(df)
-            except Exception as exc:
-                log.debug("analyse(%s) exception: %s", symbol, exc)
-                result = None
-
-            if result is None:
-                del df
-                gc.collect()
-                continue
-
-            try:
-                chart = build_chart(df, symbol, result["entry"], result["tp"], result["sl"])
-            except Exception as exc:
-                log.warning("build_chart(%s) failed: %s", symbol, exc)
-                plt.close("all")
-                del df
-                gc.collect()
-                continue
-
-            send_signal(symbol, result, chart)
-            alerted_this_cycle.add(symbol)
-
-            del df, chart, result
-            gc.collect()
-
-            time.sleep(0.5)
-
-        elapsed = time.time() - cycle_start
-        sleep_for = max(0, SCAN_SLEEP - elapsed)
-        log.info(
-            "✅  Cycle complete in %.1fs | signals sent: %d | sleeping %.0fs",
-            elapsed, len(alerted_this_cycle), sleep_for,
-        )
-        time.sleep(sleep_for)
-
-# ═════════════════════════════════════════════════════════════════════════════
+# =====================================================
 # DUMMY WEB SERVER (TO KEEP RENDER ALIVE)
-# ═════════════════════════════════════════════════════════════════════════════
-
+# =====================================================
 app = Flask(__name__)
 
 @app.route('/')
 def alive():
-    return "Bot is running perfectly!"
+    return "Scalping Scanner is running perfectly!"
 
 def run_dummy_server():
-    # كتم رسائل السيرفر الوهمي لتبقى الـ Logs نظيفة
+    import logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
+# =====================================================
+# نقطة التشغيل
+# =====================================================
 if __name__ == "__main__":
     # تشغيل السيرفر الوهمي
     server_thread = threading.Thread(target=run_dummy_server)
     server_thread.daemon = True
     server_thread.start()
     
-    # تشغيل البوت الأساسي
-    main()
+    # تشغيل حلقة البوت الأساسية
+    start_bot_loop()
