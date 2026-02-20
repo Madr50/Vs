@@ -1,6 +1,7 @@
-ccxt==4.2.14
-pandas==2.2.0
-pandas-ta==0.3.14b0
-python-telegram-bot==20.8
-python-dotenv==1.0.1
-flask
+Flask
+ccxt
+pandas
+pandas-ta
+python-telegram-bot
+wheel
+setuptools
