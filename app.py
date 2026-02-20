@@ -1,13 +1,11 @@
 # ============================================================
-# OKX Spot Trading Bot - Professional Version (With Flask)
-# ============================================================
-# المتطلبات: pip install ccxt pandas pandas-ta python-telegram-bot Flask
+# OKX Spot Trading Bot - Lightweight Version (No Numba)
 # ============================================================
 
 import os
 import ccxt
 import pandas as pd
-import pandas_ta as ta
+import ta  # استخدام المكتبة الخفيفة بدلاً من pandas-ta
 import asyncio
 import logging
 import time
@@ -18,7 +16,7 @@ from telegram.error import TelegramError
 from flask import Flask
 
 # ============================================================
-# 🌐 إعداد سيرفر Flask (لإبقاء البوت حياً على Render)
+# 🌐 إعداد سيرفر Flask
 # ============================================================
 app = Flask(__name__)
 
@@ -59,7 +57,6 @@ logger = logging.getLogger(__name__)
 # 📡 التليغرام - إرسال الإشعارات 
 # ============================================================
 async def send_telegram(message: str):
-    """إرسال رسالة إلى Telegram"""
     try:
         bot = Bot(token=config["telegram_token"])
         await bot.send_message(
@@ -71,26 +68,22 @@ async def send_telegram(message: str):
         logger.error(f"Telegram Error: {e}")
 
 def notify(message: str):
-    """مغلف متزامن لإرسال الإشعارات"""
     asyncio.run(send_telegram(message))
 
 # ============================================================
 # 🏦 اتصال OKX
 # ============================================================
 def create_exchange() -> ccxt.okx:
-    exchange = ccxt.okx({
+    return ccxt.okx({
         "apiKey":     config["okx_api_key"],
         "secret":     config["okx_secret_key"],
         "password":   config["okx_passphrase"],
         "enableRateLimit": True,
-        "options": {
-            "defaultType": "spot", 
-        }
+        "options": {"defaultType": "spot"}
     })
-    return exchange
 
 # ============================================================
-# 📈 جلب البيانات وحساب المؤشرات
+# 📈 جلب البيانات وحساب المؤشرات (معدل للمكتبة الخفيفة)
 # ============================================================
 def fetch_ohlcv(exchange: ccxt.okx, symbol: str, timeframe: str, limit: int = 200) -> pd.DataFrame:
     try:
@@ -104,28 +97,31 @@ def fetch_ohlcv(exchange: ccxt.okx, symbol: str, timeframe: str, limit: int = 20
         return pd.DataFrame()
 
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    df["rsi"] = ta.rsi(df["close"], length=14)
-    macd = ta.macd(df["close"], fast=12, slow=26, signal=9)
-    if macd is not None:
-        df["macd"]        = macd["MACD_12_26_9"]
-        df["macd_signal"] = macd["MACDs_12_26_9"]
-        df["macd_hist"]   = macd["MACDh_12_26_9"]
-    else:
-        df["macd"] = df["macd_signal"] = df["macd_hist"] = 0
-
-    df["ema20"] = ta.ema(df["close"], length=20)
-    df["ema50"] = ta.ema(df["close"], length=50)
+    # RSI
+    df["rsi"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
     
-    bb = ta.bbands(df["close"], length=20, std=2)
-    if bb is not None:
-        df["bb_upper"] = bb["BBU_20_2.0"]
-        df["bb_mid"]   = bb["BBM_20_2.0"]
-        df["bb_lower"] = bb["BBL_20_2.0"]
-    else:
-        df["bb_upper"] = df["bb_mid"] = df["bb_lower"] = 0
+    # MACD
+    macd = ta.trend.MACD(df["close"], window_fast=12, window_slow=26, window_sign=9)
+    df["macd"]        = macd.macd()
+    df["macd_signal"] = macd.macd_signal()
+    df["macd_hist"]   = macd.macd_diff()
 
-    df["atr"] = ta.atr(df["high"], df["low"], df["close"], length=14)
-    df["vol_sma"] = ta.sma(df["volume"], length=20)
+    # EMA
+    df["ema20"] = ta.trend.EMAIndicator(df["close"], window=20).ema_indicator()
+    df["ema50"] = ta.trend.EMAIndicator(df["close"], window=50).ema_indicator()
+    
+    # Bollinger Bands
+    bb = ta.volatility.BollingerBands(df["close"], window=20, window_dev=2)
+    df["bb_upper"] = bb.bollinger_hband()
+    df["bb_mid"]   = bb.bollinger_mavg()
+    df["bb_lower"] = bb.bollinger_lband()
+
+    # ATR
+    df["atr"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
+    
+    # Volume SMA
+    df["vol_sma"] = ta.trend.SMAIndicator(df["volume"], window=20).sma_indicator()
+    
     return df
 
 # ============================================================
@@ -139,15 +135,12 @@ def check_buy_signal(df: pd.DataFrame) -> dict:
     prev = df.iloc[-2]
     
     rsi_ok = 40 < curr["rsi"] < 62
-    
     macd_cross_up = (prev["macd"] < prev["macd_signal"] and curr["macd"] > curr["macd_signal"] and curr["macd_hist"] > 0)
     macd_strong = (curr["macd"] > curr["macd_signal"] and curr["macd_hist"] > prev["macd_hist"] and curr["macd"] < 0)
     macd_ok = macd_cross_up or macd_strong
     
     ema_ok = (curr["close"] > curr["ema20"] and curr["ema20"] > curr["ema50"])
-    
     bb_ok = curr["bb_mid"] <= curr["close"] <= curr["bb_upper"]
-    
     vol_ok = curr["volume"] > curr["vol_sma"] * 1.2
     
     conditions_met = sum([rsi_ok, macd_ok, ema_ok, bb_ok, vol_ok])
@@ -170,10 +163,7 @@ def check_sell_signal(df: pd.DataFrame, entry_price: float) -> dict:
     price_below_ema = curr["close"] < curr["ema20"]
     
     sell_conditions = sum([rsi_overbought, macd_cross_down, price_below_ema])
-    return {
-        "signal": sell_conditions >= 2,
-        "current_price": curr["close"]
-    }
+    return {"signal": sell_conditions >= 2, "current_price": curr["close"]}
 
 # ============================================================
 # 💰 إدارة التداول
@@ -192,8 +182,7 @@ def calculate_position_size(balance: float, price: float, ratio: float = 0.35) -
 def place_buy_order(exchange: ccxt.okx, symbol: str, quantity: float, price: float) -> dict:
     try:
         limit_price = round(price * 1.001, 2)
-        order = exchange.create_order(symbol=symbol, type="limit", side="buy", amount=quantity, price=limit_price, params={"tdMode": "cash"})
-        return order
+        return exchange.create_order(symbol=symbol, type="limit", side="buy", amount=quantity, price=limit_price, params={"tdMode": "cash"})
     except Exception as e:
         logger.error(f"Buy Order Error: {e}")
         return {}
@@ -201,8 +190,7 @@ def place_buy_order(exchange: ccxt.okx, symbol: str, quantity: float, price: flo
 def place_sell_order(exchange: ccxt.okx, symbol: str, quantity: float, price: float) -> dict:
     try:
         limit_price = round(price * 0.999, 2)
-        order = exchange.create_order(symbol=symbol, type="limit", side="sell", amount=quantity, price=limit_price, params={"tdMode": "cash"})
-        return order
+        return exchange.create_order(symbol=symbol, type="limit", side="sell", amount=quantity, price=limit_price, params={"tdMode": "cash"})
     except Exception as e:
         logger.error(f"Sell Order Error: {e}")
         return {}
