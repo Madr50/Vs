@@ -1,11 +1,11 @@
 # ============================================================
-# OKX Spot Trading Bot - Lightweight Version (No Numba)
+# OKX Spot Trading Bot - Lightweight Version (Render Fix)
 # ============================================================
 
 import os
 import ccxt
 import pandas as pd
-import ta  # استخدام المكتبة الخفيفة بدلاً من pandas-ta
+import ta  # تم التعديل هنا: استخدام المكتبة الخفيفة
 import asyncio
 import logging
 import time
@@ -83,7 +83,7 @@ def create_exchange() -> ccxt.okx:
     })
 
 # ============================================================
-# 📈 جلب البيانات وحساب المؤشرات (معدل للمكتبة الخفيفة)
+# 📈 جلب البيانات وحساب المؤشرات
 # ============================================================
 def fetch_ohlcv(exchange: ccxt.okx, symbol: str, timeframe: str, limit: int = 200) -> pd.DataFrame:
     try:
@@ -97,29 +97,24 @@ def fetch_ohlcv(exchange: ccxt.okx, symbol: str, timeframe: str, limit: int = 20
         return pd.DataFrame()
 
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    # RSI
+    # تم تعديل طريقة استدعاء المؤشرات لتتوافق مع مكتبة ta الجديدة
     df["rsi"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
     
-    # MACD
     macd = ta.trend.MACD(df["close"], window_fast=12, window_slow=26, window_sign=9)
     df["macd"]        = macd.macd()
     df["macd_signal"] = macd.macd_signal()
     df["macd_hist"]   = macd.macd_diff()
 
-    # EMA
     df["ema20"] = ta.trend.EMAIndicator(df["close"], window=20).ema_indicator()
     df["ema50"] = ta.trend.EMAIndicator(df["close"], window=50).ema_indicator()
     
-    # Bollinger Bands
     bb = ta.volatility.BollingerBands(df["close"], window=20, window_dev=2)
     df["bb_upper"] = bb.bollinger_hband()
     df["bb_mid"]   = bb.bollinger_mavg()
     df["bb_lower"] = bb.bollinger_lband()
 
-    # ATR
     df["atr"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
     
-    # Volume SMA
     df["vol_sma"] = ta.trend.SMAIndicator(df["volume"], window=20).sma_indicator()
     
     return df
