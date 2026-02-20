@@ -1,9 +1,8 @@
-ccxt
-flask
-pyTelegramBotAPI
-mplfinance
+yfinance
 pandas
 numpy
-matplotlib
-requests
-
+ta
+colorama
+tabulate
+pyTelegramBotAPI
+flask
