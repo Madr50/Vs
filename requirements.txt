@@ -1,7 +1,5 @@
 Flask
 ccxt
 pandas
-pandas-ta
+ta
 python-telegram-bot
-wheel
-setuptools
