@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 
 # =========================================
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
-ADMIN_ID = int(os.environ.get('ADMIN_ID', '7825994636'))
-TON_WALLET = os.environ.get('TON_WALLET', '')
+BOT_TOKEN = '8195283120:AAHdMCVVnTin3mwfSHivg4I1kU0vND2TulA'
+ADMIN_ID = 7825994636
+TON_WALLET_USDT = 'UQCrylDXCJpTMh4_s0JpcoGslMSWiL7SWxZY91sLb6mr5HpS'
+TON_WALLET_TG = 'UQAjj6r0hGJllOKttAmSMq0qxq7Lu_v5FxjIeMy38qQ6fX4C'
 PORT       = int(os.environ.get("PORT", 5000))
 
 # =========================================
@@ -554,16 +555,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid  = user.id
     webapp_url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME','localhost')}/app"
     kb = [
-        [InlineKeyboardButton("? Open TrendAI", web_app=WebAppInfo(url=webapp_url))],
-        [InlineKeyboardButton("? Go Premium – $5 USDT", callback_data="premium")],
-        [InlineKeyboardButton("? My Status", callback_data="status")],
+        [InlineKeyboardButton("؟ Open TrendAI", web_app=WebAppInfo(url=webapp_url))],
+        [InlineKeyboardButton("؟ Go Premium – $5 USDT", callback_data="premium")],
+        [InlineKeyboardButton("؟ My Status", callback_data="status")],
     ]
     is_prem = uid in premium_users
     await update.message.reply_text(
-        f"? Welcome to *TrendAI*, {user.first_name}!\n\n"
-        f"? We predict what's trending *before* it goes viral.\n\n"
-        f"{'? You are a *Premium* member!' if is_prem else '? Free plan – 3 trends/day'}\n\n"
-        f"Tap below to open the app ?",
+        f"؟ Welcome to *TrendAI*, {user.first_name}!\n\n"
+        f"؟ We predict what's trending *before* it goes viral.\n\n"
+        f"{'؟ You are a *Premium* member!' if is_prem else '؟ Free plan – 3 trends/day'}\n\n"
+        f"Tap below to open the app ؟",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(kb)
     )
@@ -571,13 +572,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def premium_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     await update.callback_query.message.reply_text(
-        f"? *Upgrade to Premium*\n\n"
-        f"? Unlimited trend predictions\n"
-        f"? All platforms (TikTok, Reddit, Facebook, AliExpress...)\n"
-        f"? AI Trend Score + Predictions\n"
-        f"? Early viral alerts\n\n"
-        f"? *Price: $5 USDT / month (TON)*\n\n"
-        f"Send to:\n`{TON_WALLET}`\n\n"
+        f"؟ *Upgrade to Premium*\n\n"
+        f"؟ Unlimited trend predictions\n"
+        f"؟ All platforms (TikTok, Reddit, Facebook, AliExpress...)\n"
+        f"؟ AI Trend Score + Predictions\n"
+        f"؟ Early viral alerts\n\n"
+        f"؟ *Price: $5 USDT / month (TON)*\n\n"
+        f"*USDT (TON) Address:*\n`{TON_WALLET_USDT}`\n\n"
+        f"*Telegram Wallet Address:*\n`{TON_WALLET_TG}`\n\n"
         f"Then send your *tx hash* here for activation.",
         parse_mode="Markdown"
     )
@@ -587,8 +589,8 @@ async def status_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.callback_query.from_user.id
     is_prem = uid in premium_users
     exp = premium_expiry.get(uid)
-    txt = f"? *Premium Active*\nExpires: {exp.strftime('%Y-%m-%d')}" if (is_prem and exp) else "? *Free Plan* – 3 trends/day"
-    await update.callback_query.message.reply_text(f"? *Your Status*\n\n{txt}", parse_mode="Markdown")
+    txt = f"؟ *Premium Active*\nExpires: {exp.strftime('%Y-%m-%d')}" if (is_prem and exp) else "؟ *Free Plan* – 3 trends/day"
+    await update.callback_query.message.reply_text(f"؟ *Your Status*\n\n{txt}", parse_mode="Markdown")
 
 async def activate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -597,12 +599,12 @@ async def activate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         tid = int(context.args[0])
         premium_users.add(tid)
         premium_expiry[tid] = datetime.now() + timedelta(days=30)
-        await update.message.reply_text(f"? User {tid} activated for 30 days!")
+        await update.message.reply_text(f"؟ User {tid} activated for 30 days!")
         await context.bot.send_message(tid,
-            "? *Your Premium is now active for 30 days!*\n\nOpen the app to unlock all trends ?",
+            "؟ *Your Premium is now active for 30 days!*\n\nOpen the app to unlock all trends ؟",
             parse_mode="Markdown")
     except Exception as e:
-        await update.message.reply_text(f"? Error: {e}")
+        await update.message.reply_text(f"؟ Error: {e}")
 
 # ==========================================
 # MAIN
