@@ -11,25 +11,25 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(**name**)
 
-# ─────────────────────────────────────────
+# ?????????????????????????????????????????
 
 BOT_TOKEN = “8195283120:AAHdMCVVnTin3mwfSHivg4I1kU0vND2TulA”
 ADMIN_ID   = 7825994636
 TON_WALLET = “UQCrylDXCJpTMh4_s0JpcoGslMSWiL7SWxZY91sLb6mr5HpS”
 PORT       = int(os.environ.get(“PORT”, 5000))
 
-# ─────────────────────────────────────────
+# ?????????????????????????????????????????
 
 premium_users  = set()
 premium_expiry = {}
 
 flask_app = Flask(**name**)
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 # TREND SCRAPER
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 HEADERS = {“User-Agent”: “Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36”}
 
@@ -43,7 +43,7 @@ out = []
 for item in root.findall(’.//item’)[:5]:
 title = item.find(‘title’).text
 out.append({“name”: title, “platform”: “Google”, “score”: random.randint(75, 99),
-“category”: “Search”, “momentum”: “🔥 Exploding”})
+“category”: “Search”, “momentum”: “? Exploding”})
 return out
 except:
 return []
@@ -58,7 +58,7 @@ for post in data.get(‘data’, {}).get(‘children’, [])[:5]:
 d = post[‘data’]
 out.append({“name”: d.get(‘title’, ‘’)[:55], “platform”: “Reddit”,
 “score”: random.randint(65, 92), “category”: d.get(‘subreddit’, ‘’),
-“momentum”: “📈 Rising”})
+“momentum”: “? Rising”})
 return out
 except:
 return []
@@ -68,16 +68,16 @@ items = [“LED Strip Lights”,“Mini Projector”,“Magnetic Phone Mount”,
 “Portable Blender”,“Smart Posture Corrector”,“UV Sterilizer Box”,
 “Wireless Ear Buds”,“Car HUD Display”,“Resin Art Kit”]
 return [{“name”: p, “platform”: “AliExpress”, “score”: random.randint(65, 93),
-“category”: “Products”, “momentum”: “📦 Hot Seller”}
+“category”: “Products”, “momentum”: “? Hot Seller”}
 for p in random.sample(items, 3)]
 
 def demo_trends():
 return [
-{“name”:“AI Video Generators”,“platform”:“Google”,“score”:97,“category”:“Search”,“momentum”:“🔥 Exploding”},
-{“name”:“Wireless Charging Pads”,“platform”:“AliExpress”,“score”:89,“category”:“Products”,“momentum”:“📦 Hot Seller”},
-{“name”:“Sourdough Bread Kits”,“platform”:“Reddit”,“score”:84,“category”:“Food”,“momentum”:“📈 Rising”},
-{“name”:“Stanley Cup Alternatives”,“platform”:“TikTok”,“score”:91,“category”:“Products”,“momentum”:“⚡ Viral”},
-{“name”:“Minimalist Home Decor”,“platform”:“Facebook”,“score”:78,“category”:“Lifestyle”,“momentum”:“📈 Rising”},
+{“name”:“AI Video Generators”,“platform”:“Google”,“score”:97,“category”:“Search”,“momentum”:”? Exploding”},
+{“name”:“Wireless Charging Pads”,“platform”:“AliExpress”,“score”:89,“category”:“Products”,“momentum”:”? Hot Seller”},
+{“name”:“Sourdough Bread Kits”,“platform”:“Reddit”,“score”:84,“category”:“Food”,“momentum”:”? Rising”},
+{“name”:“Stanley Cup Alternatives”,“platform”:“TikTok”,“score”:91,“category”:“Products”,“momentum”:”? Viral”},
+{“name”:“Minimalist Home Decor”,“platform”:“Facebook”,“score”:78,“category”:“Lifestyle”,“momentum”:”? Rising”},
 ]
 
 def get_all_trends(is_premium=False):
@@ -96,11 +96,11 @@ t[“recommended_action”] = “Create content NOW”
 trends.sort(key=lambda x: x[“score”], reverse=True)
 return trends
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 # MINI APP HTML
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 APP_HTML = “””<!DOCTYPE html>
 
@@ -113,485 +113,423 @@ APP_HTML = “””<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#07080f;--card:#0f1320;--card2:#151b2e;--border:rgba(99,179,237,0.1);
-  --accent:#38bdf8;--accent2:#818cf8;--accent3:#34d399;--gold:#fbbf24;
-  --text:#f1f5f9;--muted:#64748b;--red:#f87171;
+  --bg:#06080f;--c1:#0d1425;--c2:#111b30;
+  --accent:#38bdf8;--p2:#818cf8;--p3:#34d399;--gold:#fbbf24;--red:#f87171;
+  --txt:#f1f5f9;--muted:#64748b;--border:rgba(99,179,237,0.09);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'Syne',sans-serif;color:var(--txt);}
 
-/* ── BACKGROUND ── */
-.bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orb 12s ease-in-out infinite;}
-.orb1{width:400px;height:400px;background:rgba(56,189,248,0.07);top:-150px;left:-100px;}
-.orb2{width:350px;height:350px;background:rgba(129,140,248,0.06);bottom:-100px;right:-80px;animation-delay:-6s;}
-.orb3{width:250px;height:250px;background:rgba(52,211,153,0.05);top:40%;left:50%;animation-delay:-3s;}
-@keyframes orb{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(20px,15px) scale(1.08);}}
-.grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(56,189,248,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,0.03) 1px,transparent 1px);background-size:40px 40px;}
+/* BG */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);animation:orbF 14s ease-in-out infinite;}
+.o1{width:500px;height:500px;background:rgba(56,189,248,0.06);top:-200px;left:-150px;}
+.o2{width:400px;height:400px;background:rgba(129,140,248,0.05);bottom:-150px;right:-100px;animation-delay:-7s;}
+.o3{width:300px;height:300px;background:rgba(52,211,153,0.04);top:35%;left:40%;animation-delay:-3.5s;}
+@keyframes orbF{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(25px,18px) scale(1.07);}}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(56,189,248,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,0.025) 1px,transparent 1px);background-size:44px 44px;}
+.grain{position:absolute;inset:0;opacity:0.018;background-image:url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 200 200’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘n’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.85’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23n)’/%3E%3C/svg%3E”);}
 
-/* ── LAYOUT ── */
+/* LAYOUT */
 .app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 
-/* ── HEADER ── */
-.header{padding:16px 18px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(–border);background:rgba(7,8,15,0.8);backdrop-filter:blur(20px);}
+/* HEADER */
+.hdr{flex-shrink:0;padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(–border);background:rgba(6,8,15,0.85);backdrop-filter:blur(24px);}
 .logo{display:flex;align-items:center;gap:9px;}
-.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(–accent),var(–accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;animation:logoPulse 3s ease-in-out infinite;}
-@keyframes logoPulse{0%,100%{box-shadow:0 0 15px rgba(56,189,248,0.25);}50%{box-shadow:0 0 30px rgba(56,189,248,0.55);}}
-.logo-text{font-size:18px;font-weight:800;background:linear-gradient(135deg,var(–accent),var(–accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.header-right{display:flex;align-items:center;gap:8px;}
-.badge{padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;font-family:‘Space Mono’,monospace;letter-spacing:1px;}
-.badge-free{background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.25);color:var(–muted);}
-.badge-pro{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);color:var(–gold);animation:goldGlow 2s ease-in-out infinite;}
-@keyframes goldGlow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,0.15);}50%{box-shadow:0 0 18px rgba(251,191,36,0.35);}}
-.notif-btn{width:30px;height:30px;border-radius:8px;background:var(–card2);border:1px solid var(–border);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+.logo-box{width:33px;height:33px;border-radius:9px;background:linear-gradient(135deg,var(–accent),var(–p2));display:flex;align-items:center;justify-content:center;font-size:15px;animation:lGlow 3s ease-in-out infinite;}
+@keyframes lGlow{0%,100%{box-shadow:0 0 12px rgba(56,189,248,0.3);}50%{box-shadow:0 0 28px rgba(56,189,248,0.6),0 0 50px rgba(56,189,248,0.15);}}
+.logo-txt{font-size:17px;font-weight:800;background:linear-gradient(135deg,var(–accent),var(–p2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hdr-r{display:flex;align-items:center;gap:7px;}
+.badge{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:‘Space Mono’,monospace;letter-spacing:1px;}
+.bf{background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.2);color:var(–muted);}
+.bp{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:var(–gold);animation:gGlow 2s ease-in-out infinite;}
+@keyframes gGlow{0%,100%{box-shadow:0 0 6px rgba(251,191,36,0.1);}50%{box-shadow:0 0 16px rgba(251,191,36,0.3);}}
+.ico-btn{width:29px;height:29px;background:var(–c1);border:1px solid var(–border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;transition:background 0.2s;}
+.ico-btn:active{background:var(–c2);}
 
-/* ── STATS ROW ── */
-.stats-row{display:flex;gap:8px;padding:12px 18px;flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
-.stats-row::-webkit-scrollbar{display:none;}
-.stat-pill{flex-shrink:0;background:var(–card);border:1px solid var(–border);border-radius:20px;padding:7px 14px;display:flex;align-items:center;gap:7px;animation:fadeUp 0.5s ease both;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
-.stat-pill:nth-child(1){animation-delay:0.05s;}.stat-pill:nth-child(2){animation-delay:0.1s;}.stat-pill:nth-child(3){animation-delay:0.15s;}.stat-pill:nth-child(4){animation-delay:0.2s;}
-.stat-dot{width:7px;height:7px;border-radius:50%;animation:blink 1.5s ease-in-out infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.stat-num{font-size:13px;font-weight:800;font-family:‘Space Mono’,monospace;}
-.stat-lbl{font-size:10px;color:var(–muted);}
+/* STATS PILLS */
+.stats{flex-shrink:0;display:flex;gap:7px;padding:10px 18px;overflow-x:auto;scrollbar-width:none;}
+.stats::-webkit-scrollbar{display:none;}
+.spill{flex-shrink:0;background:var(–c1);border:1px solid var(–border);border-radius:18px;padding:6px 12px;display:flex;align-items:center;gap:6px;animation:fU 0.5s ease both;}
+@keyframes fU{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.spill:nth-child(1){animation-delay:0.05s;}.spill:nth-child(2){animation-delay:0.1s;}.spill:nth-child(3){animation-delay:0.15s;}.spill:nth-child(4){animation-delay:0.2s;}
+.sdot{width:6px;height:6px;border-radius:50%;animation:bl 1.8s ease-in-out infinite;}
+@keyframes bl{0%,100%{opacity:1;}50%{opacity:0.25;}}
+.snum{font-size:12px;font-weight:800;font-family:‘Space Mono’,monospace;}
+.slbl{font-size:9px;color:var(–muted);}
 
-/* ── SEARCH + TABS ── */
-.search-area{padding:0 18px 10px;flex-shrink:0;}
-.search-wrap{position:relative;margin-bottom:10px;}
-.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;}
-.search-box{width:100%;background:var(–card);border:1px solid var(–border);border-radius:12px;padding:11px 14px 11px 38px;color:var(–text);font-family:‘Syne’,sans-serif;font-size:13px;outline:none;transition:border-color 0.3s,box-shadow 0.3s;}
-.search-box::placeholder{color:var(–muted);}
-.search-box:focus{border-color:rgba(56,189,248,0.4);box-shadow:0 0 0 3px rgba(56,189,248,0.08);}
+/* SEARCH + TABS */
+.search-area{flex-shrink:0;padding:0 18px 10px;}
+.sw{position:relative;margin-bottom:9px;}
+.si{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;}
+.sb{width:100%;background:var(–c1);border:1px solid var(–border);border-radius:11px;padding:10px 12px 10px 34px;color:var(–txt);font-family:‘Syne’,sans-serif;font-size:13px;outline:none;transition:border-color 0.25s,box-shadow 0.25s;}
+.sb::placeholder{color:var(–muted);}
+.sb:focus{border-color:rgba(56,189,248,0.35);box-shadow:0 0 0 3px rgba(56,189,248,0.07);}
 .tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
 .tabs::-webkit-scrollbar{display:none;}
-.tab{flex-shrink:0;padding:7px 14px;border-radius:16px;border:1px solid var(–border);background:transparent;color:var(–muted);font-family:‘Syne’,sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.25s;}
-.tab.active{background:linear-gradient(135deg,var(–accent),var(–accent2));border-color:transparent;color:#fff;box-shadow:0 3px 12px rgba(56,189,248,0.25);}
+.tab{flex-shrink:0;padding:6px 13px;border-radius:14px;border:1px solid var(–border);background:transparent;color:var(–muted);font-family:‘Syne’,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.22s;}
+.tab.active{background:linear-gradient(135deg,var(–accent),var(–p2));border-color:transparent;color:#fff;box-shadow:0 3px 14px rgba(56,189,248,0.28);}
 
-/* ── SCROLL AREA ── */
-.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 18px 90px;scrollbar-width:none;}
-.scroll-area::-webkit-scrollbar{display:none;}
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 18px 95px;scrollbar-width:none;}
+.scroll::-webkit-scrollbar{display:none;}
 
-/* ── SECTION TITLE ── */
-.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.section-title{font-size:15px;font-weight:700;}
-.live-pill{display:flex;align-items:center;gap:5px;font-size:10px;color:var(–accent3);font-family:‘Space Mono’,monospace;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);padding:3px 9px;border-radius:12px;}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(–accent3);animation:blink 1.5s ease-in-out infinite;}
+/* SECTION HDR */
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;margin-top:4px;}
+.stitle{font-size:14px;font-weight:700;}
+.live-tag{display:flex;align-items:center;gap:5px;font-size:9px;color:var(–p3);font-family:‘Space Mono’,monospace;background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.18);padding:3px 9px;border-radius:10px;}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(–p3);animation:bl 1.5s ease-in-out infinite;}
 
-/* ── FEATURED CARD (big) ── */
-.featured-card{border-radius:20px;overflow:hidden;margin-bottom:14px;position:relative;cursor:pointer;animation:fadeUp 0.4s ease 0.25s both;transition:transform 0.3s;}
-.featured-card:active{transform:scale(0.98);}
-.featured-img{width:100%;height:180px;object-fit:cover;display:block;background:linear-gradient(135deg,#1a2744,#0f1a30);}
-.featured-img-placeholder{width:100%;height:180px;display:flex;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(135deg,#1a2744,#0f1a30);}
-.featured-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,8,15,0.95) 0%,rgba(7,8,15,0.3) 50%,transparent 100%);}
-.featured-content{position:absolute;bottom:0;left:0;right:0;padding:16px;}
-.featured-tags{display:flex;gap:6px;margin-bottom:8px;}
-.tag{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;font-family:‘Space Mono’,monospace;}
-.tag-hot{background:rgba(248,113,113,0.2);border:1px solid rgba(248,113,113,0.35);color:var(–red);}
-.tag-platform{background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.25);color:var(–accent);}
-.featured-name{font-size:18px;font-weight:800;margin-bottom:6px;line-height:1.2;}
-.featured-meta{display:flex;align-items:center;justify-content:space-between;}
-.featured-score{font-size:12px;color:var(–accent3);font-family:‘Space Mono’,monospace;font-weight:700;}
-.featured-action{font-size:11px;color:rgba(255,255,255,0.5);}
+/* NFT CARD GRID */
+.nft-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px;}
+.nft-card{background:var(–c1);border:1px solid var(–border);border-radius:18px;overflow:hidden;cursor:pointer;position:relative;
+animation:cardIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
+transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.28s,border-color 0.28s;}
+.nft-card:nth-child(1){animation-delay:0.28s;}.nft-card:nth-child(2){animation-delay:0.33s;}
+.nft-card:nth-child(3){animation-delay:0.38s;}.nft-card:nth-child(4){animation-delay:0.43s;}
+.nft-card:nth-child(5){animation-delay:0.48s;}.nft-card:nth-child(6){animation-delay:0.53s;}
+@keyframes cardIn{from{opacity:0;transform:translateY(28px) scale(0.94);}to{opacity:1;transform:translateY(0) scale(1);}}
+.nft-card:active{transform:scale(0.94) rotate(-0.5deg);}
+.nft-card:hover{border-color:rgba(56,189,248,0.22);box-shadow:0 8px 32px rgba(56,189,248,0.08);}
 
-/* ── TREND CARDS GRID ── */
-.trends-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+/* NFT ART AREA */
+.nft-art{width:100%;height:110px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.nft-emoji{font-size:52px;display:block;animation:float 4s ease-in-out infinite;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.4));}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg) scale(1);}25%{transform:translateY(-6px) rotate(1.5deg) scale(1.04);}75%{transform:translateY(-3px) rotate(-1deg) scale(1.02);}}
+.nft-card:nth-child(2) .nft-emoji{animation-delay:-1.3s;}
+.nft-card:nth-child(3) .nft-emoji{animation-delay:-2.6s;}
+.nft-card:nth-child(4) .nft-emoji{animation-delay:-0.7s;}
+.nft-card:nth-child(5) .nft-emoji{animation-delay:-1.9s;}
+.nft-card:nth-child(6) .nft-emoji{animation-delay:-3.2s;}
 
-/* ── TREND CARD ── */
-.trend-card{background:var(–card);border:1px solid var(–border);border-radius:16px;overflow:hidden;cursor:pointer;position:relative;transition:transform 0.25s,border-color 0.25s,box-shadow 0.25s;animation:fadeUp 0.45s ease both;}
-.trend-card:active{transform:scale(0.96);}
-.trend-card:hover{border-color:rgba(56,189,248,0.25);box-shadow:0 6px 24px rgba(56,189,248,0.08);}
-.trend-card:nth-child(1){animation-delay:0.3s;}.trend-card:nth-child(2){animation-delay:0.35s;}.trend-card:nth-child(3){animation-delay:0.4s;}.trend-card:nth-child(4){animation-delay:0.45s;}.trend-card:nth-child(5){animation-delay:0.5s;}.trend-card:nth-child(6){animation-delay:0.55s;}
+/* shimmer sweep on art */
+.nft-art::after{content:’’;position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.04) 50%,transparent 60%);animation:sweep 3.5s ease-in-out infinite;}
+@keyframes sweep{0%{transform:translateX(-100%);}60%,100%{transform:translateX(200%);}}
 
-.card-img{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden;}
-.card-img::after{content:’’;position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,var(–card) 100%);}
-.card-body{padding:10px;}
-.card-platform{display:flex;align-items:center;gap:5px;margin-bottom:5px;}
-.platform-dot{width:5px;height:5px;border-radius:50%;}
-.platform-name{font-size:9px;color:var(–muted);font-family:‘Space Mono’,monospace;letter-spacing:0.5px;}
-.card-name{font-size:12px;font-weight:700;line-height:1.3;margin-bottom:7px;min-height:32px;}
-.card-bottom{display:flex;align-items:center;justify-content:space-between;}
-.score-bar-wrap{flex:1;height:3px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-right:8px;}
-.score-bar{height:100%;border-radius:3px;transition:width 1s cubic-bezier(0.16,1,0.3,1);}
-.card-score{font-size:11px;font-weight:800;font-family:‘Space Mono’,monospace;}
+/* corner glow */
+.nft-glow{position:absolute;width:60px;height:60px;border-radius:50%;filter:blur(20px);opacity:0.35;top:-10px;right:-10px;animation:glowP 3s ease-in-out infinite alternate;}
+@keyframes glowP{from{opacity:0.2;transform:scale(0.9);}to{opacity:0.5;transform:scale(1.1);}}
 
-/* momentum strip */
-.momentum{font-size:10px;padding:2px 7px;border-radius:8px;margin-top:6px;display:inline-block;font-weight:600;}
+/* rank badge */
+.rank-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:2px 7px;font-size:9px;font-family:‘Space Mono’,monospace;font-weight:700;color:rgba(255,255,255,0.7);}
 
-/* ── LOCKED ── */
-.lock-overlay{position:absolute;inset:0;background:rgba(7,8,15,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;backdrop-filter:blur(4px);border-radius:16px;}
-.lock-emoji{font-size:22px;}
-.lock-lbl{font-size:10px;color:var(–gold);font-weight:700;font-family:‘Space Mono’,monospace;}
+/* platform badge */
+.plat-badge{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);}
 
-/* ── LIST CARD (full width) ── */
-.list-card{background:var(–card);border:1px solid var(–border);border-radius:16px;padding:13px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:9px;position:relative;overflow:hidden;transition:transform 0.25s,border-color 0.25s;animation:fadeUp 0.45s ease both;}
-.list-card:active{transform:scale(0.98);}
-.list-card:hover{border-color:rgba(56,189,248,0.2);}
-.list-card::before{content:’’;position:absolute;left:0;top:25%;bottom:25%;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(to bottom,var(–accent),var(–accent2));}
-.list-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
-.list-info{flex:1;min-width:0;}
-.list-name{font-size:13px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-sub{font-size:10px;color:var(–muted);font-family:‘Space Mono’,monospace;}
-.list-right{text-align:right;flex-shrink:0;}
-.list-score{font-size:14px;font-weight:800;font-family:‘Space Mono’,monospace;}
-.list-momentum{font-size:9px;color:var(–muted);}
+/* NFT BODY */
+.nft-body{padding:10px;}
+.nft-name{font-size:11px;font-weight:700;line-height:1.3;margin-bottom:7px;min-height:28px;word-break:break-word;}
+.nft-footer{display:flex;align-items:center;justify-content:space-between;}
+.score-track{flex:1;height:3px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-right:7px;}
+.score-fill{height:100%;border-radius:3px;width:0%;transition:width 1.1s cubic-bezier(0.16,1,0.3,1);}
+.nft-score{font-size:11px;font-weight:800;font-family:‘Space Mono’,monospace;}
+.nft-tag{margin-top:6px;font-size:9px;padding:2px 7px;border-radius:7px;display:inline-block;font-weight:700;}
 
-/* ── AI PREDICTION CARD ── */
-.ai-card{background:linear-gradient(135deg,rgba(56,189,248,0.08),rgba(129,140,248,0.08));border:1px solid rgba(56,189,248,0.15);border-radius:18px;padding:15px;margin-bottom:14px;animation:fadeUp 0.45s ease 0.2s both;}
-.ai-header{display:flex;align-items:center;gap:8px;margin-bottom:11px;}
-.ai-icon{width:32px;height:32px;background:linear-gradient(135deg,var(–accent),var(–accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;}
-.ai-title{font-size:13px;font-weight:700;}
-.ai-sub{font-size:10px;color:var(–muted);}
-.ai-predictions{display:flex;flex-direction:column;gap:7px;}
-.ai-row{display:flex;align-items:center;gap:9px;}
-.ai-rank{width:18px;font-size:10px;color:var(–muted);font-family:‘Space Mono’,monospace;text-align:center;}
-.ai-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;}
-.ai-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(–accent),var(–accent2));transition:width 1.2s cubic-bezier(0.16,1,0.3,1);}
-.ai-name{font-size:11px;font-weight:600;min-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ai-pct{font-size:11px;font-weight:800;font-family:‘Space Mono’,monospace;color:var(–accent3);}
+/* FEATURED BANNER */
+.feat{border-radius:20px;overflow:hidden;margin-bottom:13px;position:relative;cursor:pointer;animation:fU 0.45s ease 0.22s both;transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1);}
+.feat:active{transform:scale(0.97);}
+.feat-art{width:100%;height:160px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.feat-emoji{font-size:90px;animation:float 5s ease-in-out infinite;filter:drop-shadow(0 12px 30px rgba(0,0,0,0.5));}
+.feat-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,8,15,0.97) 0%,rgba(6,8,15,0.25) 55%,transparent 100%);}
+.feat-content{position:absolute;bottom:0;left:0;right:0;padding:14px 15px;}
+.feat-tags{display:flex;gap:5px;margin-bottom:7px;}
+.ftag{padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700;font-family:‘Space Mono’,monospace;}
+.ftag-hot{background:rgba(248,113,113,0.18);border:1px solid rgba(248,113,113,0.3);color:var(–red);}
+.ftag-plat{background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.22);color:var(–accent);}
+.feat-name{font-size:17px;font-weight:800;margin-bottom:5px;line-height:1.2;}
+.feat-meta{display:flex;align-items:center;justify-content:space-between;}
+.feat-pred{font-size:11px;color:var(–p3);font-weight:700;font-family:‘Space Mono’,monospace;}
+.feat-cta{font-size:10px;color:rgba(255,255,255,0.4);}
 
-/* ── UPGRADE BANNER ── */
-.upgrade-banner{background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(129,140,248,0.08));border:1px solid rgba(251,191,36,0.2);border-radius:18px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;cursor:pointer;transition:transform 0.25s;animation:fadeUp 0.45s ease 0.55s both;}
-.upgrade-banner:active{transform:scale(0.98);}
-.upgrade-txt h3{font-size:13px;font-weight:700;color:var(–gold);margin-bottom:2px;}
-.upgrade-txt p{font-size:11px;color:var(–muted);}
-.upgrade-btn{flex-shrink:0;background:linear-gradient(135deg,var(–gold),#f59e0b);color:#000;border:none;border-radius:11px;padding:9px 14px;font-family:‘Syne’,sans-serif;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(251,191,36,0.3);white-space:nowrap;}
+/* AI BARS CARD */
+.ai-card{background:linear-gradient(135deg,rgba(56,189,248,0.06),rgba(129,140,248,0.06));border:1px solid rgba(56,189,248,0.12);border-radius:18px;padding:14px;margin-bottom:13px;animation:fU 0.45s ease 0.18s both;}
+.ai-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.ai-ico{width:30px;height:30px;background:linear-gradient(135deg,var(–accent),var(–p2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;animation:lGlow 3s ease-in-out infinite;}
+.ai-ttl{font-size:12px;font-weight:700;}
+.ai-sub{font-size:9px;color:var(–muted);}
+.ai-rows{display:flex;flex-direction:column;gap:8px;}
+.ai-row{display:flex;align-items:center;gap:8px;}
+.ai-rank{width:16px;font-size:9px;color:var(–muted);font-family:‘Space Mono’,monospace;text-align:center;flex-shrink:0;}
+.ai-name{font-size:10px;font-weight:700;min-width:80px;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.ai-track{flex:1;height:4px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;}
+.ai-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(–accent),var(–p2));width:0%;transition:width 1.3s cubic-bezier(0.16,1,0.3,1);}
+.ai-pct{font-size:10px;font-weight:800;font-family:‘Space Mono’,monospace;color:var(–p3);min-width:28px;text-align:right;flex-shrink:0;}
 
-/* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(7,8,15,0.92);backdrop-filter:blur(24px);border-top:1px solid var(–border);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:all 0.25s;}
-.nav-icon{font-size:19px;transition:transform 0.25s;}
-.nav-lbl{font-size:9px;color:var(–muted);font-weight:600;transition:color 0.25s;}
-.nav-item.active .nav-lbl{color:var(–accent);}
-.nav-item.active .nav-icon{transform:scale(1.15);filter:drop-shadow(0 0 6px var(–accent));}
+/* UPGRADE BANNER */
+.upg{background:linear-gradient(135deg,rgba(251,191,36,0.09),rgba(129,140,248,0.07));border:1px solid rgba(251,191,36,0.18);border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;cursor:pointer;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);animation:fU 0.45s ease 0.5s both;}
+.upg:active{transform:scale(0.97);}
+.upg-txt h3{font-size:12px;font-weight:700;color:var(–gold);margin-bottom:2px;}
+.upg-txt p{font-size:10px;color:var(–muted);}
+.upg-btn{flex-shrink:0;background:linear-gradient(135deg,var(–gold),#f59e0b);color:#000;border:none;border-radius:10px;padding:8px 13px;font-family:‘Syne’,sans-serif;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(251,191,36,0.28);white-space:nowrap;transition:transform 0.2s;}
+.upg-btn:active{transform:scale(0.95);}
 
-/* ── TOAST ── */
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-70px);background:var(–card2);border:1px solid var(–border);border-radius:14px;padding:10px 18px;font-size:12px;font-weight:600;z-index:999;transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);white-space:nowrap;max-width:90vw;text-align:center;}
+/* LOCK OVERLAY */
+.lock{position:absolute;inset:0;border-radius:18px;background:rgba(6,8,15,0.72);backdrop-filter:blur(5px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.lock-e{font-size:20px;animation:lockPulse 2s ease-in-out infinite;}
+@keyframes lockPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12) rotate(-3deg);}}
+.lock-l{font-size:9px;color:var(–gold);font-weight:700;font-family:‘Space Mono’,monospace;letter-spacing:1px;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(6,8,15,0.93);backdrop-filter:blur(28px);border-top:1px solid var(–border);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:all 0.22s;}
+.ni-ico{font-size:18px;transition:transform 0.22s;}
+.ni-lbl{font-size:9px;color:var(–muted);font-weight:700;transition:color 0.22s;}
+.ni.active .ni-lbl{color:var(–accent);}
+.ni.active .ni-ico{transform:scale(1.18);filter:drop-shadow(0 0 7px var(–accent));}
+
+/* TOAST */
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-65px);background:rgba(13,20,37,0.95);border:1px solid var(–border);border-radius:13px;padding:9px 16px;font-size:11px;font-weight:700;z-index:999;transition:transform 0.38s cubic-bezier(0.16,1,0.3,1);white-space:nowrap;max-width:88vw;text-align:center;backdrop-filter:blur(16px);}
 .toast.show{transform:translateX(-50%) translateY(0);}
 
-/* ── LOADING ── */
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:14px;}
-.spinner{width:36px;height:36px;border:3px solid var(–border);border-top-color:var(–accent);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-txt{color:var(–muted);font-size:12px;font-family:‘Space Mono’,monospace;animation:blink 1.5s ease-in-out infinite;}
+/* LOADING */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:55px 20px;gap:13px;}
+.spin{width:34px;height:34px;border:3px solid var(–border);border-top-color:var(–accent);border-radius:50%;animation:spinA 0.75s linear infinite;}
+@keyframes spinA{to{transform:rotate(360deg);}}
+.spin-txt{color:var(–muted);font-size:11px;font-family:‘Space Mono’,monospace;animation:bl 1.5s ease-in-out infinite;}
 </style>
 
 </head>
 <body>
 <div class="bg">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-  <div class="grid-lines"></div>
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="grid"></div><div class="grain"></div>
 </div>
 
 <div class="app">
-  <!-- Header -->
-  <div class="header">
+  <div class="hdr">
     <div class="logo">
-      <div class="logo-icon">⚡</div>
-      <span class="logo-text">TrendAI</span>
+      <div class="logo-box">&#x26A1;</div>
+      <span class="logo-txt">TrendAI</span>
     </div>
-    <div class="header-right">
-      <span class="badge badge-free" id="userBadge">FREE</span>
-      <div class="notif-btn">🔔</div>
+    <div class="hdr-r">
+      <span class="badge bf" id="userBadge">FREE</span>
+      <div class="ico-btn">&#x1F514;</div>
     </div>
   </div>
 
-  <!-- Stats row -->
-
-  <div class="stats-row" id="statsRow">
-    <div class="stat-pill"><div class="stat-dot" style="background:#34d399;"></div><span class="stat-num" id="statCount">—</span><span class="stat-lbl">trends</span></div>
-    <div class="stat-pill"><div class="stat-dot" style="background:#38bdf8;"></div><span class="stat-num">94%</span><span class="stat-lbl">accuracy</span></div>
-    <div class="stat-pill"><div class="stat-dot" style="background:#818cf8;"></div><span class="stat-num">6</span><span class="stat-lbl">platforms</span></div>
-    <div class="stat-pill"><div class="stat-dot" style="background:#fbbf24;"></div><span class="stat-num" id="statUpdated">now</span><span class="stat-lbl">updated</span></div>
+  <div class="stats" id="statsRow">
+    <div class="spill"><div class="sdot" style="background:#34d399;"></div><span class="snum" id="sCount">--</span><span class="slbl">trends</span></div>
+    <div class="spill"><div class="sdot" style="background:#38bdf8;animation-delay:-0.5s;"></div><span class="snum">94%</span><span class="slbl">accuracy</span></div>
+    <div class="spill"><div class="sdot" style="background:#818cf8;animation-delay:-1s;"></div><span class="snum">6</span><span class="slbl">platforms</span></div>
+    <div class="spill"><div class="sdot" style="background:#fbbf24;animation-delay:-1.5s;"></div><span class="snum" id="sTime">now</span><span class="slbl">updated</span></div>
   </div>
-
-  <!-- Search + Tabs -->
 
   <div class="search-area">
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input class="search-box" id="searchBox" placeholder="Search trends..." autocomplete="off">
+    <div class="sw">
+      <span class="si">&#x1F50D;</span>
+      <input class="sb" id="searchBox" placeholder="Search trends..." autocomplete="off">
     </div>
     <div class="tabs">
-      <button class="tab active" data-tab="all">🌍 All</button>
-      <button class="tab" data-tab="products">📦 Products</button>
-      <button class="tab" data-tab="content">🎬 Content</button>
-      <button class="tab" data-tab="search">🔍 Search</button>
-      <button class="tab" data-tab="ai">🤖 AI Picks</button>
+      <button class="tab active" data-tab="all">&#x1F30D; All</button>
+      <button class="tab" data-tab="products">&#x1F4E6; Products</button>
+      <button class="tab" data-tab="content">&#x1F3AC; Content</button>
+      <button class="tab" data-tab="search">&#x1F50D; Search</button>
+      <button class="tab" data-tab="ai">&#x1F916; AI Picks</button>
     </div>
   </div>
 
-  <!-- Main scroll area -->
-
-  <div class="scroll-area" id="mainScroll">
-    <div class="loading"><div class="spinner"></div><span class="loading-txt">Scanning platforms...</span></div>
+  <div class="scroll" id="mainScroll">
+    <div class="loader"><div class="spin"></div><span class="spin-txt">Scanning platforms...</span></div>
   </div>
 </div>
 
-<!-- Bottom Nav -->
-
-<div class="bottom-nav">
-  <div class="nav-item active" onclick="setNav(this,'home')"><span class="nav-icon">🔥</span><span class="nav-lbl">Trends</span></div>
-  <div class="nav-item" onclick="setNav(this,'predict')"><span class="nav-icon">🤖</span><span class="nav-lbl">Predict</span></div>
-  <div class="nav-item" onclick="setNav(this,'saved')"><span class="nav-icon">🔖</span><span class="nav-lbl">Saved</span></div>
-  <div class="nav-item" onclick="setNav(this,'profile')"><span class="nav-icon">👤</span><span class="nav-lbl">Profile</span></div>
+<div class="bnav">
+  <div class="ni active" onclick="setNav(this,'home')"><span class="ni-ico">&#x1F525;</span><span class="ni-lbl">Trends</span></div>
+  <div class="ni" onclick="setNav(this,'predict')"><span class="ni-ico">&#x1F916;</span><span class="ni-lbl">Predict</span></div>
+  <div class="ni" onclick="setNav(this,'saved')"><span class="ni-ico">&#x1F516;</span><span class="ni-lbl">Saved</span></div>
+  <div class="ni" onclick="setNav(this,'profile')"><span class="ni-ico">&#x1F464;</span><span class="ni-lbl">Profile</span></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const tg=window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#07080f');}catch(e){}}
-const userId=tg?.initDataUnsafe?.user?.id||null;
-let isPremium=false,allTrends=[],activeTab='all',saved=[];
+var tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#06080f');}catch(e){}}
+var userId=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user.id:null;
+var isPremium=false,allTrends=[],activeTab='all';
 
-const PLATFORM_META={
-  Google:{icon:'🔍',color:'#4285f4',bg:'#4285f420'},
-  Reddit:{icon:'🤖',color:'#ff4500',bg:'#ff450020'},
-  TikTok:{icon:'🎵',color:'#ff0050',bg:'#ff005020'},
-  Twitter:{icon:'🐦',color:'#1da1f2',bg:'#1da1f220'},
-  Facebook:{icon:'👥',color:'#1877f2',bg:'#1877f220'},
-  AliExpress:{icon:'📦',color:'#ff6a00',bg:'#ff6a0020'},
-  Amazon:{icon:'🛒',color:'#ff9900',bg:'#ff990020'},
+var PM={
+  Google:{i:'&#x1F50D;',c:'#4285f4'},Reddit:{i:'&#x1F916;',c:'#ff4500'},
+  TikTok:{i:'&#x1F3B5;',c:'#ff0050'},Twitter:{i:'&#x1F426;',c:'#1da1f2'},
+  Facebook:{i:'&#x1F465;',c:'#1877f2'},AliExpress:{i:'&#x1F4E6;',c:'#ff6a00'},
+  Amazon:{i:'&#x1F6D2;',c:'#ff9900'}
 };
 
-const EMOJIS=['🚀','💡','🔥','⚡','🌊','🎯','💎','🌟','🎪','🦋','🌈','🎭','🏆','🔮','💫'];
+var ARTS=['&#x1F680;','&#x1F4A1;','&#x1F525;','&#x26A1;','&#x1F30A;','&#x1F3AF;','&#x1F48E;','&#x1F31F;','&#x1F3AA;','&#x1F98B;','&#x1F308;','&#x1F3AD;','&#x1F3C6;','&#x1F52E;','&#x1F4AB;','&#x1F9E0;','&#x1F31A;','&#x1F9F2;','&#x26A1;','&#x1F4F8;'];
 
-function emoji(name){
-  let h=0;for(let c of name)h=(h<<5)-h+c.charCodeAt(0);
-  return EMOJIS[Math.abs(h)%EMOJIS.length];
-}
-function scoreColor(s){return s>=90?'#34d399':s>=75?'#38bdf8':s>=60?'#818cf8':'#64748b';}
-function momentumStyle(m){
-  if(m.includes('Exploding')||m.includes('Viral'))return 'background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.25);color:#f87171;';
-  if(m.includes('Rising'))return 'background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;';
+function getArt(name){var h=0;for(var i=0;i<name.length;i++){h=(h<<5)-h+name.charCodeAt(i);}return ARTS[Math.abs(h)%ARTS.length];}
+function sColor(s){return s>=90?'#34d399':s>=75?'#38bdf8':s>=60?'#818cf8':'#64748b';}
+function mStyle(m){
+  if(m.indexOf('Exploding')>-1||m.indexOf('Viral')>-1)return 'background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.25);color:#f87171;';
+  if(m.indexOf('Rising')>-1)return 'background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;';
   return 'background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);color:#94a3b8;';
 }
 
-function getDemoTrends(){
+function demo(){
   return[
-    {name:"AI Video Generators",platform:"Google",score:97,category:"Search",momentum:"🔥 Exploding",ai_prediction:"98% viral in 48h",recommended_action:"Create content NOW"},
-    {name:"Wireless Charging Pads",platform:"AliExpress",score:89,category:"Products",momentum:"📦 Hot Seller",ai_prediction:"87% viral in 72h",recommended_action:"Stock up if selling"},
-    {name:"Sourdough Bread Kits",platform:"Reddit",score:84,category:"Food",momentum:"📈 Rising",ai_prediction:"76% viral in 5 days",recommended_action:"Write article today"},
-    {name:"Stanley Cup Dupes",platform:"TikTok",score:91,category:"Products",momentum:"⚡ Viral",ai_prediction:"93% viral in 24h",recommended_action:"Start ads immediately",locked:!isPremium},
-    {name:"Minimalist Home Decor",platform:"Facebook",score:78,category:"Lifestyle",momentum:"📈 Rising",ai_prediction:"71% viral in 1 week",recommended_action:"Create content NOW",locked:!isPremium},
-    {name:"AI Prompt Engineering",platform:"Reddit",score:86,category:"Tech",momentum:"🔥 Exploding",ai_prediction:"89% viral in 36h",recommended_action:"Write article today",locked:!isPremium},
+    {name:'AI Video Generators',platform:'Google',score:97,category:'Search',momentum:'&#x1F525; Exploding',ai_prediction:'98% viral in 48h',recommended_action:'Create content NOW'},
+    {name:'Wireless Charging Pads',platform:'AliExpress',score:89,category:'Products',momentum:'&#x1F4E6; Hot Seller',ai_prediction:'87% viral in 72h',recommended_action:'Stock up if selling'},
+    {name:'Sourdough Bread Kits',platform:'Reddit',score:84,category:'Food',momentum:'&#x1F4C8; Rising',ai_prediction:'76% viral in 5 days',recommended_action:'Write article today'},
+    {name:'Stanley Cup Dupes',platform:'TikTok',score:91,category:'Products',momentum:'&#x26A1; Viral',ai_prediction:'93% viral in 24h',recommended_action:'Start ads immediately',locked:true},
+    {name:'Minimalist Home Decor',platform:'Facebook',score:78,category:'Lifestyle',momentum:'&#x1F4C8; Rising',ai_prediction:'71% viral in 1 week',recommended_action:'Create content NOW',locked:true},
+    {name:'AI Prompt Engineering',platform:'Reddit',score:86,category:'Tech',momentum:'&#x1F525; Exploding',ai_prediction:'89% viral in 36h',recommended_action:'Write article today',locked:true},
   ];
 }
 
 async function init(){
-  try{
-    const r=await fetch('/api/status?user_id='+userId);
-    const d=await r.json();
-    isPremium=d.is_premium;
-    if(isPremium){
-      document.getElementById('userBadge').textContent='PRO';
-      document.getElementById('userBadge').className='badge badge-pro';
-    }
-  }catch(e){}
-  try{
-    const r=await fetch('/api/trends?user_id='+userId);
-    allTrends=await r.json();
-  }catch(e){allTrends=getDemoTrends();}
-  document.getElementById('statCount').textContent=allTrends.length+'+';
+  try{var r=await fetch('/api/status?user_id='+userId);var d=await r.json();isPremium=d.is_premium;
+    if(isPremium){document.getElementById('userBadge').textContent='PRO';document.getElementById('userBadge').className='badge bp';}}catch(e){}
+  try{var r2=await fetch('/api/trends?user_id='+userId);allTrends=await r2.json();}catch(e){allTrends=demo();}
+  if(!isPremium){allTrends.forEach(function(t,i){if(i>=3)t.locked=true;});}
+  document.getElementById('sCount').textContent=allTrends.length+'+';
   renderAll();
 }
 
 function renderAll(){
-  let trends=allTrends;
-  const q=document.getElementById('searchBox').value.toLowerCase();
+  var trends=allTrends.slice();
+  var q=document.getElementById('searchBox').value.toLowerCase();
   if(activeTab!=='all'&&activeTab!=='ai'){
-    trends=trends.filter(t=>(t.category||'').toLowerCase().includes(activeTab)||(t.platform||'').toLowerCase().includes(activeTab));
+    trends=trends.filter(function(t){return ((t.category||'').toLowerCase().indexOf(activeTab)>-1)||((t.platform||'').toLowerCase().indexOf(activeTab)>-1);});
   }
-  if(q) trends=trends.filter(t=>t.name.toLowerCase().includes(q));
+  if(q){trends=trends.filter(function(t){return t.name.toLowerCase().indexOf(q)>-1;});}
 
-  const area=document.getElementById('mainScroll');
-  let html='';
+  var area=document.getElementById('mainScroll');
+  var html='';
 
   if(activeTab==='ai'){
-    html+=renderAISection(allTrends);
+    html+=mkAI(allTrends);
+    if(!isPremium)html+=mkUpg();
   } else {
-    // Featured
-    if(trends.length>0) html+=renderFeatured(trends[0]);
-    // AI bar chart
-    html+=renderAISection(allTrends.slice(0,5));
-    // Grid
-    html+='<div class="section-hdr"><span class="section-title">Trending Now</span><div class="live-pill"><div class="live-dot"></div>LIVE</div></div>';
-    html+='<div class="trends-grid">';
-    trends.slice(1,5).forEach((t,i)=>{ html+=renderGridCard(t,i); });
+    if(trends.length>0)html+=mkFeat(trends[0]);
+    html+=mkAI(allTrends.slice(0,5));
+    html+='<div class="shdr"><span class="stitle">Trending Now</span><div class="live-tag"><div class="ldot"></div>LIVE</div></div>';
+    html+='<div class="nft-grid">';
+    var slice=trends.slice(1,7);
+    for(var i=0;i<slice.length;i++){html+=mkNFT(slice[i],i+1);}
     html+='</div>';
-    // List
-    if(trends.length>5){
-      html+='<div class="section-hdr" style="margin-top:4px;"><span class="section-title">More Trends</span></div>';
-      trends.slice(5).forEach((t,i)=>{ html+=renderListCard(t,i); });
-    }
-    // Upgrade banner for free users
-    if(!isPremium) html+=renderUpgradeBanner();
+    if(!isPremium)html+=mkUpg();
   }
 
   area.innerHTML=html;
 
-  // Animate bars after render
-  requestAnimationFrame(()=>{
-    area.querySelectorAll('.score-bar').forEach(bar=>{
-      const w=bar.dataset.w;
-      setTimeout(()=>{ bar.style.width=w+'%'; },100);
-    });
-    area.querySelectorAll('.ai-bar').forEach(bar=>{
-      const w=bar.dataset.w;
-      setTimeout(()=>{ bar.style.width=w+'%'; },200);
-    });
+  // Animate bars
+  requestAnimationFrame(function(){
+    var fills=area.querySelectorAll('.score-fill,.ai-fill');
+    for(var i=0;i<fills.length;i++){
+      (function(el){setTimeout(function(){el.style.width=el.dataset.w+'%';},120);})(fills[i]);
+    }
   });
 }
 
-function renderFeatured(t){
-  const p=PLATFORM_META[t.platform]||{icon:'📊',color:'#38bdf8',bg:'#38bdf820'};
-  const em=emoji(t.name);
-  return `
-  <div class="featured-card" onclick="cardTap('${encodeURIComponent(t.name)}','${t.score}',${!!t.locked})">
-    <div class="featured-img-placeholder" style="background:linear-gradient(135deg,${p.color}22,${p.color}11);">${em}</div>
-    <div class="featured-overlay"></div>
-    <div class="featured-content">
-      <div class="featured-tags">
-        <span class="tag tag-hot">🔥 #1 TODAY</span>
-        <span class="tag tag-platform">${p.icon} ${t.platform}</span>
-      </div>
-      <div class="featured-name">${t.name}</div>
-      <div class="featured-meta">
-        <span class="featured-score">🤖 ${t.ai_prediction||'Analyzing...'}</span>
-        <span class="featured-action">${t.recommended_action||''} →</span>
-      </div>
-    </div>
-  </div>`;
+function mkFeat(t){
+  var p=PM[t.platform]||{i:'&#x1F4CA;',c:'#38bdf8'};
+  var art=getArt(t.name);
+  var c=sColor(t.score);
+  return '<div class="feat" onclick="tap(\''+encodeURIComponent(t.name)+'\','+t.score+','+(!!t.locked)+')">'
+    +'<div class="feat-art" style="background:linear-gradient(135deg,'+p.c+'1a,'+p.c+'0d);">'
+    +'<span class="feat-emoji">'+art+'</span>'
+    +'<div class="feat-overlay"></div>'
+    +'</div>'
+    +'<div class="feat-content">'
+    +'<div class="feat-tags"><span class="ftag ftag-hot">&#x1F525; #1 TODAY</span><span class="ftag ftag-plat">'+p.i+' '+t.platform+'</span></div>'
+    +'<div class="feat-name">'+t.name+'</div>'
+    +'<div class="feat-meta"><span class="feat-pred">&#x1F916; '+(t.ai_prediction||'Analyzing...')+'</span><span class="feat-cta">'+(t.recommended_action||'')+' &rarr;</span></div>'
+    +'</div>'
+    +'</div>';
 }
 
-function renderGridCard(t,i){
-  const p=PLATFORM_META[t.platform]||{icon:'📊',color:'#38bdf8',bg:'#38bdf820'};
-  const em=emoji(t.name);
-  const c=scoreColor(t.score);
-  const lk=t.locked;
-  return `
-  <div class="trend-card" style="animation-delay:${0.3+i*0.05}s" onclick="cardTap('${encodeURIComponent(t.name)}','${t.score}',${!!lk})">
-    <div class="card-img" style="background:linear-gradient(135deg,${p.color}18,${p.color}08);">${em}</div>
-    <div class="card-body">
-      <div class="card-platform">
-        <div class="platform-dot" style="background:${p.color};"></div>
-        <span class="platform-name">${t.platform.toUpperCase()}</span>
-      </div>
-      <div class="card-name">${t.name}</div>
-      <div class="card-bottom">
-        <div class="score-bar-wrap"><div class="score-bar" data-w="${t.score}" style="width:0%;background:${c};"></div></div>
-        <span class="card-score" style="color:${c};">${t.score}</span>
-      </div>
-      <span class="momentum" style="${momentumStyle(t.momentum)}">${t.momentum}</span>
-    </div>
-    ${lk?`<div class="lock-overlay"><span class="lock-emoji">🔒</span><span class="lock-lbl">PREMIUM</span></div>`:''}
-  </div>`;
+function mkNFT(t,rank){
+  var p=PM[t.platform]||{i:'&#x1F4CA;',c:'#38bdf8'};
+  var art=getArt(t.name);
+  var c=sColor(t.score);
+  var lk=t.locked;
+  return '<div class="nft-card" onclick="tap(\''+encodeURIComponent(t.name)+'\','+t.score+','+!!lk+')">'
+    +'<div class="nft-art" style="background:linear-gradient(145deg,'+p.c+'15,'+p.c+'07);">'
+    +'<div class="nft-glow" style="background:'+p.c+';"></div>'
+    +'<span class="nft-emoji">'+art+'</span>'
+    +'<div class="rank-badge">#'+rank+'</div>'
+    +'<div class="plat-badge">'+p.i+'</div>'
+    +'</div>'
+    +'<div class="nft-body">'
+    +'<div class="nft-name">'+t.name+'</div>'
+    +'<div class="nft-footer">'
+    +'<div class="score-track"><div class="score-fill" data-w="'+t.score+'" style="background:'+c+';width:0%;"></div></div>'
+    +'<span class="nft-score" style="color:'+c+';">'+t.score+'</span>'
+    +'</div>'
+    +'<span class="nft-tag" style="'+mStyle(t.momentum)+'">'+t.momentum+'</span>'
+    +'</div>'
+    +(lk?'<div class="lock"><span class="lock-e">&#x1F512;</span><span class="lock-l">PREMIUM</span></div>':'')
+    +'</div>';
 }
 
-function renderListCard(t,i){
-  const p=PLATFORM_META[t.platform]||{icon:'📊',color:'#38bdf8',bg:'#38bdf820'};
-  const c=scoreColor(t.score);
-  const lk=t.locked;
-  return `
-  <div class="list-card" style="animation-delay:${0.3+i*0.05}s" onclick="cardTap('${encodeURIComponent(t.name)}','${t.score}',${!!lk})">
-    <div class="list-icon" style="background:${p.bg};">${p.icon}</div>
-    <div class="list-info">
-      <div class="list-name">${t.name}</div>
-      <div class="list-sub">${t.platform} · ${t.category||'Trend'}</div>
-    </div>
-    <div class="list-right">
-      <div class="list-score" style="color:${c};">${t.score}</div>
-      <div class="list-momentum">${t.momentum.split(' ').slice(1).join(' ')}</div>
-    </div>
-    ${lk?`<div class="lock-overlay" style="border-radius:16px;"><span class="lock-emoji" style="font-size:16px;">🔒</span></div>`:''}
-  </div>`;
+function mkAI(trends){
+  var top=trends.slice(0,5);
+  var rows=top.map(function(t,i){
+    return '<div class="ai-row">'
+      +'<span class="ai-rank">'+(i+1)+'</span>'
+      +'<span class="ai-name">'+t.name+'</span>'
+      +'<div class="ai-track"><div class="ai-fill" data-w="'+t.score+'" style="width:0%;"></div></div>'
+      +'<span class="ai-pct">'+t.score+'%</span>'
+      +'</div>';
+  }).join('');
+  return '<div class="ai-card">'
+    +'<div class="ai-hdr"><div class="ai-ico">&#x1F916;</div><div><div class="ai-ttl">AI Viral Predictor</div><div class="ai-sub">Next 48h forecast</div></div></div>'
+    +'<div class="ai-rows">'+rows+'</div>'
+    +'</div>';
 }
 
-function renderAISection(trends){
-  const top=trends.slice(0,5);
-  return `
-  <div class="ai-card">
-    <div class="ai-header">
-      <div class="ai-icon">🤖</div>
-      <div><div class="ai-title">AI Viral Predictor</div><div class="ai-sub">Next 48h forecast</div></div>
-    </div>
-    <div class="ai-predictions">
-      ${top.map((t,i)=>`
-      <div class="ai-row">
-        <span class="ai-rank">${i+1}</span>
-        <span class="ai-name">${t.name}</span>
-        <div class="ai-bar-wrap"><div class="ai-bar" data-w="${t.score}" style="width:0%;"></div></div>
-        <span class="ai-pct">${t.score}%</span>
-      </div>`).join('')}
-    </div>
-  </div>`;
+function mkUpg(){
+  return '<div class="upg" onclick="showUpg()">'
+    +'<div class="upg-txt"><h3>&#x2B50; Go Premium</h3><p>All trends + AI alerts &middot; $5/mo USDT</p></div>'
+    +'<button class="upg-btn">Upgrade</button>'
+    +'</div>';
 }
 
-function renderUpgradeBanner(){
-  return `
-  <div class="upgrade-banner" onclick="showUpgrade()">
-    <div class="upgrade-txt">
-      <h3>⭐ Unlock Premium</h3>
-      <p>All trends + AI predictions · $5/mo</p>
-    </div>
-    <button class="upgrade-btn">Upgrade</button>
-  </div>`;
+function tap(name,score,locked){
+  if(locked){showUpg();return;}
+  showToast('&#x1F525; '+decodeURIComponent(name)+' -- Score '+score);
 }
 
-function cardTap(name,score,locked){
-  if(locked){showUpgrade();return;}
-  showToast('🔥 '+decodeURIComponent(name)+' — Score '+score);
-}
-
-function showUpgrade(){
+function showUpg(){
   if(tg&&tg.showPopup){
-    tg.showPopup({
-      title:'⭐ Go Premium',
-      message:'Unlock all trends, AI predictions & early alerts for just $5 USDT/month.',
-      buttons:[{id:'up',type:'default',text:'Upgrade Now'},{type:'cancel',text:'Later'}]
-    },(b)=>{ if(b==='up') showToast('Send $5 USDT to activate!'); });
+    tg.showPopup({title:'&#x2B50; Go Premium',message:'Unlock all trends, AI predictions & early alerts for just $5 USDT/month.',buttons:[{id:'up',type:'default',text:'Upgrade Now'},{type:'cancel',text:'Later'}]},function(b){if(b==='up')showToast('Send $5 USDT to activate!');});
   } else {
-    showToast('💰 Send $5 USDT to activate Premium!');
+    showToast('&#x1F4B0; Send $5 USDT to activate Premium!');
   }
 }
 
 function setNav(el,page){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
   el.classList.add('active');
-  const msgs={predict:'🤖 AI Predictor — Premium',saved:'🔖 No saved trends yet',profile:'👤 Open bot for profile'};
-  if(msgs[page]) showToast(msgs[page]);
+  var msgs={predict:'&#x1F916; AI Predictor -- Premium only',saved:'&#x1F516; No saved trends yet',profile:'&#x1F464; Open bot to view profile'};
+  if(msgs[page])showToast(msgs[page]);
 }
 
 function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
+  var t=document.getElementById('toast');
+  t.innerHTML=msg;
   t.classList.add('show');
-  clearTimeout(t._tm);
-  t._tm=setTimeout(()=>t.classList.remove('show'),2800);
+  clearTimeout(t._t);
+  t._t=setTimeout(function(){t.classList.remove('show');},2800);
 }
 
 document.getElementById('searchBox').addEventListener('input',renderAll);
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
     tab.classList.add('active');
     activeTab=tab.dataset.tab;
     renderAll();
   });
 });
 
-// Update time
-function updateTime(){
-  const now=new Date();
-  document.getElementById('statUpdated').textContent=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+function tickTime(){
+  var n=new Date();
+  document.getElementById('sTime').textContent=n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();
 }
-updateTime();
-setInterval(updateTime,60000);
-
+tickTime();
+setInterval(tickTime,60000);
 init();
 </script>
 
@@ -610,27 +548,27 @@ def api_status():
 user_id = request.args.get(‘user_id’, type=int)
 return jsonify({“is_premium”: user_id in premium_users if user_id else False})
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 # TELEGRAM BOT
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 user = update.effective_user
 uid  = user.id
 webapp_url = f”https://{os.environ.get(‘RENDER_EXTERNAL_HOSTNAME’,‘localhost’)}/app”
 kb = [
-[InlineKeyboardButton(“🚀 Open TrendAI”, web_app=WebAppInfo(url=webapp_url))],
-[InlineKeyboardButton(“⭐ Go Premium — $5 USDT”, callback_data=“premium”)],
-[InlineKeyboardButton(“📊 My Status”, callback_data=“status”)],
+[InlineKeyboardButton(”? Open TrendAI”, web_app=WebAppInfo(url=webapp_url))],
+[InlineKeyboardButton(”? Go Premium – $5 USDT”, callback_data=“premium”)],
+[InlineKeyboardButton(”? My Status”, callback_data=“status”)],
 ]
 is_prem = uid in premium_users
 await update.message.reply_text(
-f”👋 Welcome to *TrendAI*, {user.first_name}!\n\n”
-f”🔍 We predict what’s trending *before* it goes viral.\n\n”
-f”{‘✅ You are a *Premium* member!’ if is_prem else ‘🆓 Free plan — 3 trends/day’}\n\n”
-f”Tap below to open the app 👇”,
+f”? Welcome to *TrendAI*, {user.first_name}!\n\n”
+f”? We predict what’s trending *before* it goes viral.\n\n”
+f”{’? You are a *Premium* member!’ if is_prem else ‘? Free plan – 3 trends/day’}\n\n”
+f”Tap below to open the app ?”,
 parse_mode=“Markdown”,
 reply_markup=InlineKeyboardMarkup(kb)
 )
@@ -638,12 +576,12 @@ reply_markup=InlineKeyboardMarkup(kb)
 async def premium_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
 await update.callback_query.answer()
 await update.callback_query.message.reply_text(
-f”⭐ *Upgrade to Premium*\n\n”
-f”✅ Unlimited trend predictions\n”
-f”✅ All platforms (TikTok, Reddit, Facebook, AliExpress…)\n”
-f”✅ AI Trend Score + Predictions\n”
-f”✅ Early viral alerts\n\n”
-f”💰 *Price: $5 USDT / month (TON)*\n\n”
+f”? *Upgrade to Premium*\n\n”
+f”? Unlimited trend predictions\n”
+f”? All platforms (TikTok, Reddit, Facebook, AliExpress…)\n”
+f”? AI Trend Score + Predictions\n”
+f”? Early viral alerts\n\n”
+f”? *Price: $5 USDT / month (TON)*\n\n”
 f”Send to:\n`{TON_WALLET}`\n\n”
 f”Then send your *tx hash* here for activation.”,
 parse_mode=“Markdown”
@@ -654,8 +592,8 @@ await update.callback_query.answer()
 uid = update.callback_query.from_user.id
 is_prem = uid in premium_users
 exp = premium_expiry.get(uid)
-txt = f”✅ *Premium Active*\nExpires: {exp.strftime(’%Y-%m-%d’)}” if (is_prem and exp) else “🆓 *Free Plan* — 3 trends/day”
-await update.callback_query.message.reply_text(f”📊 *Your Status*\n\n{txt}”, parse_mode=“Markdown”)
+txt = f”? *Premium Active*\nExpires: {exp.strftime(’%Y-%m-%d’)}” if (is_prem and exp) else “? *Free Plan* – 3 trends/day”
+await update.callback_query.message.reply_text(f”? *Your Status*\n\n{txt}”, parse_mode=“Markdown”)
 
 async def activate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if update.effective_user.id != ADMIN_ID:
@@ -664,18 +602,18 @@ try:
 tid = int(context.args[0])
 premium_users.add(tid)
 premium_expiry[tid] = datetime.now() + timedelta(days=30)
-await update.message.reply_text(f”✅ User {tid} activated for 30 days!”)
+await update.message.reply_text(f”? User {tid} activated for 30 days!”)
 await context.bot.send_message(tid,
-“🎉 *Your Premium is now active for 30 days!*\n\nOpen the app to unlock all trends 🚀”,
+“? *Your Premium is now active for 30 days!*\n\nOpen the app to unlock all trends ?”,
 parse_mode=“Markdown”)
 except Exception as e:
-await update.message.reply_text(f”❌ Error: {e}”)
+await update.message.reply_text(f”? Error: {e}”)
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 # MAIN
 
-# ══════════════════════════════════════════
+# ??????????????????????????????????????????
 
 def run_flask():
 flask_app.run(host=“0.0.0.0”, port=PORT)
