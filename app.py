@@ -17,16 +17,26 @@ import google.generativeai as genai
 import schedule
 from PIL import Image, ImageDraw, ImageFont
 from flask import Flask
-from dotenv import load_dotenv
 
-load_dotenv()
+# دالة لتنظيف المفاتيح من المسافات والعلامات العربية المخفية التي تسبب أعطال
+def clean_token(token):
+    if not token:
+        return ""
+    return token.replace('\u200f', '').replace('\u200e', '').strip()
 
-TWITTER_BEARER_TOKEN    = os.getenv("TWITTER_BEARER_TOKEN")
-TWITTER_CONSUMER_KEY    = os.getenv("TWITTER_CONSUMER_KEY")
-TWITTER_CONSUMER_SECRET = os.getenv("TWITTER_CONSUMER_SECRET")
-TWITTER_ACCESS_TOKEN    = os.getenv("TWITTER_ACCESS_TOKEN")
-TWITTER_ACCESS_SECRET   = os.getenv("TWITTER_ACCESS_SECRET")
-GEMINI_API_KEY          = os.getenv("GEMINI_API_KEY")
+# ========== ضع مفاتيحك هنا مباشرة ==========
+
+TWITTER_BEARER_TOKEN    = clean_token("AAAAAAAAAAAAAAAAAAAAAM427wEAAAAAnl7hYT5DriL%2FDB0wbVqO5qeKL5c%3Dw9q7sytz4F2BHa8bXlBvTIHFNqs4GQot8wmpDKjKRuBTPTJxKw")
+TWITTER_CONSUMER_KEY    = clean_token("XouAe27vVWq9ymiaqm36pqWd1")
+TWITTER_CONSUMER_SECRET = clean_token("PvC7nOHcITdk7QRglDtJAvsP9SpsnII062WYlfrAH67BoQI96B")
+
+# المفاتيح التي أعطيتني إياها
+TWITTER_ACCESS_TOKEN    = clean_token("2025905050636132352-5TeTbFItkXEcLdDaFlvwWeQNDDzBPP")
+TWITTER_ACCESS_SECRET   = clean_token("dqysUoQ9pbCCXNVdpyDoZkM2iVIkVIUeGIto1UTt7Qv6g")
+
+GEMINI_API_KEY          = clean_token("AIzaSyBsYZ0zeNY6pMRAuDsz_ulV7HhsNhllVkg")
+
+# ===========================================
 
 COMMUNITY_ID     = "1804198664484569261"
 MAX_POSTS        = 200
@@ -346,15 +356,9 @@ def run_scheduler():
 
 def main():
     log.info("Respect RP Bot starting...")
-    required = [
-        "TWITTER_BEARER_TOKEN", "TWITTER_CONSUMER_KEY", "TWITTER_CONSUMER_SECRET",
-        "TWITTER_ACCESS_TOKEN", "TWITTER_ACCESS_SECRET", "GEMINI_API_KEY",
-    ]
-    missing = [v for v in required if not os.getenv(v)]
-    if missing:
-        log.critical("Missing env vars: %s", missing)
-        raise SystemExit(1)
-
+    
+    # تم إزالة شرط التحقق من متغيرات البيئة لأننا وضعنا المفاتيح يدوياً في الأعلى
+    
     threading.Thread(target=run_scheduler, daemon=True, name="BotThread").start()
     log.info("Bot thread started")
 
