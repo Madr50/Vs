@@ -240,7 +240,7 @@ def kb_shop() -> InlineKeyboardMarkup:
 rows = []
 for key, label in FEATURE_LABELS.items():
 rows.append([InlineKeyboardButton(
-f”{label}  —  {PRICES[key]} ⭐”,
+f”{label}  –  {PRICES[key]} ⭐”,
 callback_data=f”buy_{key}”
 )])
 rows.append([InlineKeyboardButton(“◀️ رجوع”, callback_data=“back_main”)])
@@ -251,7 +251,7 @@ return InlineKeyboardMarkup([[InlineKeyboardButton(“◀️ القائمة ال
 
 def kb_buy(key: str) -> InlineKeyboardMarkup:
 return InlineKeyboardMarkup([
-[InlineKeyboardButton(f”✅ اشترِ الآن — {PRICES[key]} ⭐”, callback_data=f”buy_{key}”)],
+[InlineKeyboardButton(f”✅ اشترِ الآن – {PRICES[key]} ⭐”, callback_data=f”buy_{key}”)],
 [InlineKeyboardButton(“◀️ رجوع”, callback_data=“do_shop”)],
 ])
 
@@ -268,7 +268,7 @@ u = get_user(uid)
 return f”””
 {BANNER}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎁 *بونص الترحيب* — `{FREE_FETCHES + BONUS_FETCHES}` محاولة مجانية
+🎁 *بونص الترحيب* – `{FREE_FETCHES + BONUS_FETCHES}` محاولة مجانية
 ├─ {FREE_FETCHES} أساسية  +  {BONUS_FETCHES} هدية 🎀
 
 🔥 *ما يقدمه البوت:*
@@ -289,15 +289,15 @@ return f”””
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *الأوامر:*
 
-🔗 `/fetch <url>` — جلب رابط NFT واحد
-📦 `/bulk <url1> <url2> ...` — جلب حتى 10 روابط `(⭐ Bulk)`
-📡 `/monitor <url>` — مراقبة NFT `(⭐ Monitor)`
-🛑 `/unmonitor <url>` — إيقاف مراقبة NFT
-📜 `/history` — سجل آخر 20 رابط `(⭐ History)`
-📤 `/export` — تصدير CSV `(⭐ Export)`
-💎 `/status` — حالة حسابك والمزايا
-🛒 `/shop` — متجر Telegram Stars
-📊 `/stats` — إحصائياتك الشخصية
+🔗 `/fetch <url>` – جلب رابط NFT واحد
+📦 `/bulk <url1> <url2> ...` – جلب حتى 10 روابط `(⭐ Bulk)`
+📡 `/monitor <url>` – مراقبة NFT `(⭐ Monitor)`
+🛑 `/unmonitor <url>` – إيقاف مراقبة NFT
+📜 `/history` – سجل آخر 20 رابط `(⭐ History)`
+📤 `/export` – تصدير CSV `(⭐ Export)`
+💎 `/status` – حالة حسابك والمزايا
+🛒 `/shop` – متجر Telegram Stars
+📊 `/stats` – إحصائياتك الشخصية
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 *نصيحة:* أرسل الرابط مباشرةً بدون أمر!
 🎟 *محاولات متبقية:* `{u['fetches_left']}`
@@ -324,7 +324,7 @@ if p.get(“unlimited_until”):
 until = datetime.fromisoformat(p[“unlimited_until”])
 if until > datetime.now():
 hrs = int((until - datetime.now()).total_seconds() // 3600)
-ulim = f”\n⚡ *Unlimited* نشط — يبقى `{hrs}` ساعة”
+ulim = f”\n⚡ *Unlimited* نشط – يبقى `{hrs}` ساعة”
 
 ```
 return f"""
@@ -345,19 +345,19 @@ return f"""
 def txt_shop() -> str:
 lines = []
 for key, label in FEATURE_LABELS.items():
-lines.append(f”{label} — `{PRICES[key]} ⭐`\n   *{FEATURE_DESC[key]}*\n”)
+lines.append(f”{label} – `{PRICES[key]} ⭐`\n   *{FEATURE_DESC[key]}*\n”)
 return f”””
-🛒 *متجر المزايا — Telegram Stars*
+🛒 *متجر المزايا – Telegram Stars*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {’’.join(lines)}━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 اضغط على الميزة للشراء 👇
 “””
 
 def txt_result(r: dict, fetches_left: int, metadata: bool) -> str:
-title   = (r.get(“title”)      or “—”)[:60]
-coll    = (r.get(“collection”) or “—”)[:50]
+title   = (r.get(“title”)      or “–”)[:60]
+coll    = (r.get(“collection”) or “–”)[:50]
 price   = r.get(“price”)   or “غير محدد”
-plat    = r.get(“platform”) or “—”
+plat    = r.get(“platform”) or “–”
 err     = f”\n⚠️ *{r[‘error’]}*” if r.get(“error”) else “”
 
 ```
@@ -375,8 +375,8 @@ text = f"""
 
 ```
 if metadata:
-    rarity    = r.get("rarity")    or "—"
-    last_sale = r.get("last_sale") or "—"
+    rarity    = r.get("rarity")    or "--"
+    last_sale = r.get("last_sale") or "--"
     traits    = r.get("traits")    or []
     text += f"""
 ```
@@ -490,8 +490,8 @@ consume(uid); save_history(uid, url, r); results.append(r)
 text = f”✅ *تم جلب {len(results)} رابط:*\n\n”
 for i, r in enumerate(results, 1):
 st  = “✅” if not r[“error”] else “❌”
-ttl = (r[“title”] or “—”)[:40]
-prc = r[“price”] or “—”
+ttl = (r[“title”] or “–”)[:40]
+prc = r[“price”] or “–”
 text += f”`{i}.` {st} *{ttl}*\n   💰 `{prc}` | 🌐 {r[‘platform’]}\n\n”
 await msg.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=kb_back())
 
@@ -543,8 +543,8 @@ await msg.reply_text(“📭 السجل فارغ حتى الآن.”, parse_mode
 return
 text = “📜 *آخر 20 رابط تم جلبها:*\n\n”
 for i, (url, r, ts) in enumerate(reversed(hist), 1):
-ttl = (r.get(“title”) or “—”)[:35]
-prc = r.get(“price”) or “—”
+ttl = (r.get(“title”) or “–”)[:35]
+prc = r.get(“price”) or “–”
 text += f”`{i}.` *{ttl}*\n   💰 `{prc}` | 🕐 `{ts[:16]}`\n   🔗 `{url[:55]}...`\n\n”
 await msg.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=kb_back())
 
@@ -627,7 +627,7 @@ async def edit(text, kb=None):
                               reply_markup=kb or kb_back())
 
 if d == "back_main":
-    await q.message.edit_text("🏠 *القائمة الرئيسية* — اختر ما تريد:",
+    await q.message.edit_text("🏠 *القائمة الرئيسية* -- اختر ما تريد:",
         parse_mode=ParseMode.MARKDOWN, reply_markup=kb_main())
 elif d == "do_status":  await edit(txt_status(uid))
 elif d == "do_shop":    await edit(txt_shop(), kb_shop())
@@ -775,7 +775,7 @@ await app.bot.send_message(
 uid,
 f”📡 *تنبيه مراقبة NFT!*\n\n”
 f”🏷 *{title}*\n”
-f”{change}: `{old_price or '—'}` → `{new_price}`\n”
+f”{change}: `{old_price or '--'}` → `{new_price}`\n”
 f”🔗 {item[‘url’][:60]}”,
 parse_mode=ParseMode.MARKDOWN,
 )
@@ -846,7 +846,7 @@ return “pong”, 200
 # ════════════════════════════════════════════════════════════════
 
 def self_ping():
-“”“Render Free يوقف الخدمة بعد 15 دقيقة — نرسل ping كل 14 دقيقة”””
+“”“Render Free يوقف الخدمة بعد 15 دقيقة – نرسل ping كل 14 دقيقة”””
 import urllib.request
 url = os.getenv(“RENDER_EXTERNAL_URL”, “http://localhost:8080”) + “/ping”
 while True:
